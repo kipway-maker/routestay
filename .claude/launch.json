@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "routestay-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "-p", "3001"],
+      "cwd": "/Users/jessygrauw/Desktop/RouteStay/apps/web",
+      "port": 3001
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #FF6240;
+  --color-sky: #00B4D8;
+  --color-mint: #06D6A0;
+  --color-sun: #FFD166;
+  --color-bg: #F8F7F4;
+  --color-card: #FFFFFF;
+  --color-text: #1A1A2E;
+  --color-muted: #6B7280;
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Nunito", sans-serif;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+/* La page /search gère son propre overflow: hidden via inline style */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Leaflet popup — remove default padding so our card occupe tout l'espace */
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+.leaflet-popup-tip-container { margin-top: -1px; }
