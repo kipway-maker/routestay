@@ -272,17 +272,8 @@ export default function SearchPageClient() {
           display: "flex", alignItems: "center", gap: "12px",
         }}>
           <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <div style={{
-                width: "30px", height: "30px", borderRadius: "9px",
-                background: "linear-gradient(135deg, #E8644A, #F09070)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "15px", boxShadow: "0 2px 8px rgba(255,98,64,0.3)",
-              }}>🗺️</div>
-              <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "15px", color: "#E8644A" }}>
-                KipWay
-              </span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-kipway.png" alt="KipWay" style={{ height: "30px", width: "auto" }} />
           </Link>
 
           <div style={{ flex: 1, minWidth: 0 }}>

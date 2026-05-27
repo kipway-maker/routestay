@@ -28,14 +28,9 @@ export default function HomePage() {
         padding: "0 32px", height: "60px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{
-            width: "34px", height: "34px", borderRadius: "10px",
-            background: "linear-gradient(135deg, #E8644A, #F09070)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px",
-            boxShadow: "0 3px 10px rgba(255,98,64,0.3)",
-          }}>🗺️</div>
-          <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "18px", color: "#E8644A" }}>KipWay</span>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-kipway.png" alt="KipWay" style={{ height: "36px", width: "auto" }} />
         </div>
         <a
           href="#search"
