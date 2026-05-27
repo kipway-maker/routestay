@@ -265,7 +265,7 @@ export default function SearchPageClient() {
 
         {/* Header : logo + search + filtres */}
         <div style={{
-          padding: "10px 20px",
+          padding: "8px 20px",
           background: "#FFFFFF",
           borderBottom: "1px solid rgba(0,0,0,0.07)",
           flexShrink: 0,
@@ -276,7 +276,7 @@ export default function SearchPageClient() {
         }}>
           <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-kipway-v2.png" alt="KipWay" style={{ height: "86px", width: "auto", mixBlendMode: "multiply" }} />
+            <img src="/logo-kipway-v2.png" alt="KipWay" style={{ height: "106px", width: "auto", mixBlendMode: "multiply" }} />
           </Link>
 
           <div style={{ flex: 1, minWidth: 0 }}>
