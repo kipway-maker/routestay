@@ -100,7 +100,7 @@ export default function HomePage() {
           </p>
 
           {/* Search bar hero */}
-          <div id="search" style={{ width: "100%", maxWidth: "620px" }}>
+          <div id="search" style={{ width: "100%", maxWidth: "900px" }}>
             <SearchBar onSearch={handleSearch} loading={false} />
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function HomePage() {
         <p style={{ fontSize: "17px", color: "rgba(255,255,255,0.85)", marginBottom: "36px" }}>
           Entrez votre itinéraire ci-dessous — c'est tout.
         </p>
-        <div style={{ maxWidth: "580px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
           <SearchBar onSearch={handleSearch} loading={false} />
         </div>
       </section>

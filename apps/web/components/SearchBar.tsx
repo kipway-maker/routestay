@@ -93,7 +93,7 @@ function AddressInput({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const vPad = compact ? "12px 20px" : "18px 28px";
+  const vPad = compact ? "12px 20px" : "22px 36px";
 
   return (
     <div
@@ -102,7 +102,7 @@ function AddressInput({
       style={{
         flex: 1, minWidth: 0,
         padding: vPad,
-        paddingRight: compact ? "20px" : "36px", // espace pour le ×
+        paddingRight: compact ? "20px" : "48px", // espace pour le ×
         cursor: "text",
         borderRadius: isLast ? "0 50px 50px 0" : "0",
         background: focused ? "rgba(255,98,64,0.04)" : "transparent",
@@ -131,7 +131,7 @@ function AddressInput({
         style={{
           width: "100%",
           border: "none", outline: "none",
-          fontSize: compact ? "14px" : "17px",
+          fontSize: compact ? "14px" : "19px",
           fontWeight: 500,
           color: query ? "#1E1E2E" : "#9ca3af",
           background: "transparent",
@@ -235,13 +235,13 @@ export default function SearchBar({ onSearch, loading, compact = false }: Search
 
   const btnStyle: React.CSSProperties = {
     flexShrink: 0,
-    margin: compact ? "5px" : "8px 12px 8px 8px",
-    padding: compact ? "9px 18px" : "16px 32px",
+    margin: compact ? "5px" : "10px 14px 10px 10px",
+    padding: compact ? "9px 18px" : "18px 40px",
     borderRadius: "50px",
     border: "none",
     background: canSearch ? "#E8644A" : "#e5e7eb",
     color: canSearch ? "#FFFFFF" : "#9ca3af",
-    fontSize: compact ? "13px" : "14px",
+    fontSize: compact ? "13px" : "16px",
     fontWeight: 700,
     cursor: canSearch ? "pointer" : "not-allowed",
     fontFamily: "var(--font-nunito), sans-serif",
