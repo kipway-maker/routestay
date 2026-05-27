@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import HotelCard from "@/components/HotelCard";
@@ -14,7 +14,7 @@ import FocusPointBand from "@/components/FocusPointBand";
 import HotelDetailOverlay from "@/components/HotelDetailOverlay";
 import { Hotel } from "@/lib/amadeus";
 
-const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
+const MapView = nextDynamic(() => import("@/components/MapView"), { ssr: false });
 
 interface Place { name: string; lat: number; lng: number; }
 
