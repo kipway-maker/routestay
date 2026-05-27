@@ -112,7 +112,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
                   width: "34px", height: "34px", borderRadius: "50%",
                   background: "rgba(255,255,255,0.88)", border: "none", cursor: "pointer",
                   fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", color: "#1A1A2E",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", color: "#1E1E2E",
                 }}
               >‹</button>
               <button
@@ -122,7 +122,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
                   width: "34px", height: "34px", borderRadius: "50%",
                   background: "rgba(255,255,255,0.88)", border: "none", cursor: "pointer",
                   fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", color: "#1A1A2E",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", color: "#1E1E2E",
                 }}
               >›</button>
 
@@ -139,7 +139,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
                       width: k === photoIdx ? "18px" : "6px",
                       height: "6px",
                       borderRadius: "3px",
-                      background: k === photoIdx ? "#FF6240" : "rgba(255,255,255,0.7)",
+                      background: k === photoIdx ? "#E8644A" : "rgba(255,255,255,0.7)",
                       border: "none", cursor: "pointer", padding: 0,
                       transition: "width 0.2s",
                     }}
@@ -172,7 +172,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
                 background: "rgba(255,255,255,0.92)",
                 border: "none", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "18px", color: "#1A1A2E",
+                fontSize: "18px", color: "#1E1E2E",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
               }}
             >×</button>
@@ -197,7 +197,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
               padding: "6px 12px",
               boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
             }}>
-              <span style={{ fontSize: "20px", fontWeight: 800, color: "#1A1A2E" }}>
+              <span style={{ fontSize: "20px", fontWeight: 800, color: "#1E1E2E" }}>
                 {hotel.pricePerNight} €
               </span>
               <span style={{ fontSize: "12px", color: "#6B7280" }}> /nuit</span>
@@ -210,7 +210,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
 
           {/* Name + city */}
           <div style={{
-            fontSize: "22px", fontWeight: 800, color: "#1A1A2E",
+            fontSize: "22px", fontWeight: 800, color: "#1E1E2E",
             fontFamily: "var(--font-nunito), sans-serif", marginBottom: "4px",
           }}>
             {hotel.name}
@@ -234,7 +234,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
               display: "flex", flexDirection: "column", gap: "4px",
             }}>
               <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Détour</span>
-              <span style={{ fontSize: "18px", fontWeight: 800, color: "#00B4D8" }}>
+              <span style={{ fontSize: "18px", fontWeight: 800, color: "#6FA8C0" }}>
                 {hotel.detourMinutes === 0 ? "Sur la route" : `+${hotel.detourMinutes} min`}
               </span>
             </div>
@@ -249,7 +249,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
                 <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>
                   Check-in max
                 </span>
-                <span style={{ fontSize: "18px", fontWeight: 800, color: isLate ? "#D97706" : "#1A1A2E" }}>
+                <span style={{ fontSize: "18px", fontWeight: 800, color: isLate ? "#D97706" : "#1E1E2E" }}>
                   {hotel.checkinDeadline}
                 </span>
                 {estimatedArrival && (
@@ -277,7 +277,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
                 display: "flex", flexDirection: "column", gap: "4px",
               }}>
                 <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Nuit du</span>
-                <span style={{ fontSize: "15px", fontWeight: 800, color: "#1A1A2E" }}>
+                <span style={{ fontSize: "15px", fontWeight: 800, color: "#1E1E2E" }}>
                   {new Date(departureDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                 </span>
               </div>
@@ -292,7 +292,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
             style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
               width: "100%", padding: "16px",
-              background: "#FF6240", color: "#FFFFFF",
+              background: "#E8644A", color: "#FFFFFF",
               borderRadius: "16px", border: "none",
               fontSize: "15px", fontWeight: 800,
               textDecoration: "none",
@@ -302,7 +302,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
               boxSizing: "border-box",
             }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#e8502e")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#FF6240")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#E8644A")}
           >
             {departureDate ? `Voir les dispo du ${new Date(departureDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} →` : "Voir l'hôtel →"}
           </a>

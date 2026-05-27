@@ -1,18 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand: #FF6240;
-  --color-sky: #00B4D8;
+  /* Palette KipWay — corail + bleu route */
+  --color-brand: #E8644A;       /* corail logo */
+  --color-road: #6FA8C0;        /* bleu route logo */
+  --color-brand-light: #FF8060; /* corail clair hover */
+  --color-road-light: #A8CEDD;  /* bleu clair */
   --color-mint: #06D6A0;
   --color-sun: #FFD166;
-  --color-bg: #F8F7F4;
+  --color-bg: #F7F5F2;
   --color-card: #FFFFFF;
-  --color-text: #1A1A2E;
+  --color-text: #1E1E2E;
   --color-muted: #6B7280;
   --font-sans: "Inter", sans-serif;
   --font-display: "Nunito", sans-serif;
   --radius-lg: 16px;
   --radius-md: 12px;
+  /* Gradient signature KipWay */
+  --gradient-brand: linear-gradient(135deg, #E8644A 0%, #6FA8C0 100%);
+  --gradient-brand-soft: linear-gradient(135deg, rgba(232,100,74,0.12) 0%, rgba(111,168,192,0.12) 100%);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

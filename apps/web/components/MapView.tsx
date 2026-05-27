@@ -1,64 +1,30 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import { MapContainer, TileLayer, Polyline, CircleMarker, Marker, Popup, useMap } from "react-leaflet";
+import { useEffect, useRef, useCallback } from "react";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { Hotel } from "@/lib/amadeus";
 
-function createPricePin(price: number | null, selected: boolean) {
-  const bg = selected ? "#FF6240" : "#1A1A2E";
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY ?? "";
+const MAP_STYLE = `https://api.maptiler.com/maps/019e69f3-cd46-753f-a7c4-d5924682d95e/style.json?key=${MAPTILER_KEY}`;
+
+function createPriceHTML(price: number | null, selected: boolean) {
+  const bg = selected ? "#E8644A" : "#1E1E2E";
   const label = price ? `${price} €` : "—";
-  return L.divIcon({
-    className: "",
-    html: `<div style="
-      background: ${bg};
-      color: #fff;
-      border-radius: 20px;
-      padding: 5px 10px;
-      font-size: 13px;
-      font-weight: 700;
-      white-space: nowrap;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      border: 2px solid #fff;
-      transform: ${selected ? "scale(1.1)" : "scale(1)"};
-      transition: all 0.15s;
-      font-family: system-ui, sans-serif;
-    ">${label}</div>`,
-    iconSize: undefined,
-    iconAnchor: [0, 0],
-  });
-}
-
-interface FitBoundsProps {
-  route: { type: string; coordinates: [number, number][] } | null;
-  origin: { lat: number; lng: number } | null;
-  destination: { lat: number; lng: number } | null;
-}
-
-function FitBounds({ route, origin, destination }: FitBoundsProps) {
-  const map = useMap();
-  useEffect(() => {
-    if (route && route.coordinates.length > 0) {
-      const bounds = L.latLngBounds(route.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]));
-      map.fitBounds(bounds, { padding: [60, 60] });
-    } else if (origin && destination) {
-      map.fitBounds([[origin.lat, origin.lng], [destination.lat, destination.lng]], { padding: [60, 60] });
-    }
-  }, [route, origin, destination, map]);
-  return null;
-}
-
-function FlyToHotel({ hotel }: { hotel: Hotel | null }) {
-  const map = useMap();
-  const prevId = useRef<string | null>(null);
-  useEffect(() => {
-    if (hotel && hotel.id !== prevId.current) {
-      map.flyTo([hotel.lat, hotel.lng], 11, { duration: 0.8 });
-      prevId.current = hotel.id;
-    }
-  }, [hotel, map]);
-  return null;
+  return `<div style="
+    background: ${bg};
+    color: #fff;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    border: 2px solid #fff;
+    transform: ${selected ? "scale(1.1)" : "scale(1)"};
+    font-family: system-ui, sans-serif;
+    cursor: pointer;
+  ">${label}</div>`;
 }
 
 interface MapViewProps {
@@ -72,99 +38,138 @@ interface MapViewProps {
 }
 
 export default function MapView({ route, hotels, origin, destination, selectedHotelId, onSelectHotel, onExpandHotel }: MapViewProps) {
-  const selectedHotel = hotels.find((h) => h.id === selectedHotelId) || null;
-  const routePositions: [number, number][] = route
-    ? route.coordinates.map(([lng, lat]) => [lat, lng])
-    : [];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const popupsRef = useRef<Map<string, maplibregl.Popup>>(new Map());
 
-  return (
-    <MapContainer
-      center={[46.5, 2.5]}
-      zoom={6}
-      style={{ height: "100%", width: "100%", background: "#e8e8e8" }}
-      zoomControl={true}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        subdomains="abcd"
-        minZoom={0}
-        maxZoom={19}
-      />
+  // Init map
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
 
-      <FitBounds route={route} origin={origin} destination={destination} />
-      <FlyToHotel hotel={selectedHotel} />
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: MAP_STYLE,
+      center: [2.5, 46.5],
+      zoom: 5,
+      attributionControl: false,
+    });
 
-      {routePositions.length > 0 && (
-        <Polyline
-          positions={routePositions}
-          pathOptions={{ color: "#FF6240", weight: 5, opacity: 0.95, lineCap: "round", lineJoin: "round" }}
-        />
-      )}
+    map.addControl(new maplibregl.NavigationControl(), "top-left");
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
-      {origin && (
-        <CircleMarker center={[origin.lat, origin.lng]} radius={10}
-          pathOptions={{ color: "#fff", fillColor: "#FF6240", fillOpacity: 1, weight: 3 }}>
-          <Popup>{origin.name.split(",")[0]}</Popup>
-        </CircleMarker>
-      )}
-      {destination && (
-        <CircleMarker center={[destination.lat, destination.lng]} radius={10}
-          pathOptions={{ color: "#fff", fillColor: "#06D6A0", fillOpacity: 1, weight: 3 }}>
-          <Popup>{destination.name.split(",")[0]}</Popup>
-        </CircleMarker>
-      )}
+    map.on("load", () => {
+      // Route layer
+      map.addSource("route", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } } });
+      map.addLayer({ id: "route-line", type: "line", source: "route",
+        paint: { "line-color": "#E8644A", "line-width": 5, "line-opacity": 0.95 },
+        layout: { "line-cap": "round", "line-join": "round" },
+      });
+    });
 
-      {hotels.map((hotel) => (
-        <Marker
-          key={hotel.id}
-          position={[hotel.lat, hotel.lng]}
-          icon={createPricePin(hotel.pricePerNight, selectedHotelId === hotel.id)}
-          zIndexOffset={selectedHotelId === hotel.id ? 1000 : 0}
-          eventHandlers={{ click: () => onSelectHotel(hotel.id) }}
-        >
-          <Popup maxWidth={300} className="kipway-popup">
-            <div style={{ width: "280px", fontFamily: "system-ui, sans-serif", padding: "8px" }}>
-              <div style={{ position: "relative", width: "100%", height: "160px", background: "#f3f4f6", borderRadius: "14px", overflow: "hidden", marginBottom: "16px" }}>
-                <img src={hotel.imageUrl} alt={hotel.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
-                />
-                {hotel.pricePerNight && (
-                  <div style={{
-                    position: "absolute", bottom: "10px", right: "10px",
-                    background: "rgba(255,255,255,0.96)", borderRadius: "9px",
-                    padding: "4px 12px", fontSize: "14px", fontWeight: 700, color: "#1A1A2E",
-                  }}>{hotel.pricePerNight} €</div>
-                )}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: "15px", color: "#1A1A2E", marginBottom: "6px",
-                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {hotel.name}
-              </div>
-              <div style={{ fontSize: "13px", color: "#6B7280", marginBottom: "16px", display: "flex", gap: "10px" }}>
-                <span>{hotel.city}</span>
-                {hotel.rating && <span>★ {hotel.rating}</span>}
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "13px", color: "#FF6240", fontWeight: 600 }}>
-                  {hotel.detourMinutes === 0 ? "Sur la route" : `+${hotel.detourMinutes} min`}
-                </span>
-                <button
-                  onClick={() => onExpandHotel(hotel.id)}
-                  style={{
-                    padding: "9px 20px", borderRadius: "20px",
-                    background: "#FF6240", color: "#fff", border: "none",
-                    fontSize: "13px", fontWeight: 700, cursor: "pointer",
-                  }}
-                >
-                  Voir l&apos;hôtel →
-                </button>
-              </div>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
-  );
+    mapRef.current = map;
+    return () => { map.remove(); mapRef.current = null; };
+  }, []);
+
+  // Update route
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const src = map.getSource("route") as maplibregl.GeoJSONSource | undefined;
+    if (!src) return;
+    src.setData({
+      type: "Feature", properties: {},
+      geometry: { type: "LineString", coordinates: route?.coordinates ?? [] },
+    });
+  }, [route]);
+
+  // Fit bounds
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (route && route.coordinates.length > 0) {
+      const lngs = route.coordinates.map(([lng]) => lng);
+      const lats = route.coordinates.map(([, lat]) => lat);
+      map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 60, duration: 600 });
+    } else if (origin && destination) {
+      map.fitBounds([[Math.min(origin.lng, destination.lng), Math.min(origin.lat, destination.lat)],
+        [Math.max(origin.lng, destination.lng), Math.max(origin.lat, destination.lat)]], { padding: 60 });
+    }
+  }, [route, origin, destination]);
+
+  // Origin/destination markers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (origin) {
+      const el = document.createElement("div");
+      el.style.cssText = "width:14px;height:14px;border-radius:50%;background:#E8644A;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)";
+      new maplibregl.Marker({ element: el }).setLngLat([origin.lng, origin.lat])
+        .setPopup(new maplibregl.Popup({ offset: 20 }).setText(origin.name.split(",")[0]))
+        .addTo(map);
+    }
+    if (destination) {
+      const el = document.createElement("div");
+      el.style.cssText = "width:14px;height:14px;border-radius:50%;background:#06D6A0;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)";
+      new maplibregl.Marker({ element: el }).setLngLat([destination.lng, destination.lat])
+        .setPopup(new maplibregl.Popup({ offset: 20 }).setText(destination.name.split(",")[0]))
+        .addTo(map);
+    }
+  }, [origin, destination]);
+
+  // Hotel markers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Remove old markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.clear();
+    popupsRef.current.clear();
+
+    hotels.forEach((hotel) => {
+      const el = document.createElement("div");
+      el.innerHTML = createPriceHTML(hotel.pricePerNight, selectedHotelId === hotel.id);
+
+      const popup = new maplibregl.Popup({ offset: 20, maxWidth: "300px" }).setHTML(`
+        <div style="width:260px;font-family:system-ui,sans-serif;padding:8px">
+          <div style="width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#f3f4f6">
+            <img src="${hotel.imageUrl}" style="width:100%;height:100%;object-fit:cover"
+              onerror="this.src='https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop'"/>
+          </div>
+          <div style="font-weight:700;font-size:14px;color:#1E1E2E;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${hotel.name}</div>
+          <div style="font-size:12px;color:#6B7280;margin-bottom:12px;display:flex;gap:8px">
+            <span>${hotel.city}</span>${hotel.rating ? `<span>★ ${hotel.rating}</span>` : ""}
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;color:#E8644A;font-weight:600">${hotel.detourMinutes === 0 ? "Sur la route" : `+${hotel.detourMinutes} min`}</span>
+            <button onclick="window.__kipwayExpand('${hotel.id}')" style="padding:8px 16px;border-radius:16px;background:#E8644A;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">Voir →</button>
+          </div>
+        </div>
+      `);
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([hotel.lng, hotel.lat])
+        .setPopup(popup)
+        .addTo(map);
+
+      el.addEventListener("click", () => { onSelectHotel(hotel.id); marker.togglePopup(); });
+      markersRef.current.set(hotel.id, marker);
+      popupsRef.current.set(hotel.id, popup);
+    });
+
+    // Global handler for popup button
+    (window as any).__kipwayExpand = (id: string) => onExpandHotel(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hotels, selectedHotelId]);
+
+  // Fly to selected hotel
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedHotelId) return;
+    const hotel = hotels.find((h) => h.id === selectedHotelId);
+    if (hotel) map.flyTo({ center: [hotel.lng, hotel.lat], zoom: 11, duration: 800 });
+  }, [selectedHotelId, hotels]);
+
+  return <div ref={containerRef} style={{ height: "100%", width: "100%", background: "#e8e8e8" }} />;
 }

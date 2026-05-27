@@ -6,8 +6,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito" });
 
 export const metadata: Metadata = {
-  title: "KipWay",
-  description: "Les hôtels sur votre route",
+  title: "KipWay — L'hébergement en route",
+  description: "Trouvez un hôtel sur votre route en un clic. KipWay calcule votre trajet et affiche tous les hébergements disponibles sur le chemin.",
+  icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

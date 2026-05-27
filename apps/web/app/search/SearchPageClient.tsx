@@ -259,7 +259,7 @@ export default function SearchPageClient() {
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
+        overflow: "visible",
         background: "#F8F7F4",
       }}>
 
@@ -275,11 +275,11 @@ export default function SearchPageClient() {
             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
               <div style={{
                 width: "30px", height: "30px", borderRadius: "9px",
-                background: "linear-gradient(135deg, #FF6240, #FF8A6E)",
+                background: "linear-gradient(135deg, #E8644A, #F09070)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "15px", boxShadow: "0 2px 8px rgba(255,98,64,0.3)",
               }}>🗺️</div>
-              <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "15px", color: "#FF6240" }}>
+              <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "15px", color: "#E8644A" }}>
                 KipWay
               </span>
             </div>
@@ -297,9 +297,9 @@ export default function SearchPageClient() {
                 flexShrink: 0,
                 display: "flex", alignItems: "center", gap: "6px",
                 padding: "7px 14px", borderRadius: "20px",
-                border: activeFilters > 0 ? "1.5px solid #1A1A2E" : "1.5px solid #e5e7eb",
-                background: activeFilters > 0 ? "#1A1A2E" : "#FFFFFF",
-                color: activeFilters > 0 ? "#FFFFFF" : "#1A1A2E",
+                border: activeFilters > 0 ? "1.5px solid #1E1E2E" : "1.5px solid #e5e7eb",
+                background: activeFilters > 0 ? "#1E1E2E" : "#FFFFFF",
+                color: activeFilters > 0 ? "#FFFFFF" : "#1E1E2E",
                 fontSize: "13px", fontWeight: 600, cursor: "pointer",
                 transition: "all 0.15s",
               }}
@@ -314,7 +314,7 @@ export default function SearchPageClient() {
               Filtres
               {activeFilters > 0 && (
                 <span style={{
-                  background: "#FF6240", color: "#fff",
+                  background: "#E8644A", color: "#fff",
                   borderRadius: "50%", width: "18px", height: "18px",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "10px", fontWeight: 700,
@@ -340,7 +340,7 @@ export default function SearchPageClient() {
               {/* Départ */}
               <div style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: "70px" }}>
                 {origin && (
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1A1A2E", fontFamily: "var(--font-nunito), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1E1E2E", fontFamily: "var(--font-nunito), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px" }}>
                     {origin.name.split(",")[0]}
                   </span>
                 )}
@@ -351,7 +351,7 @@ export default function SearchPageClient() {
                     onChange={(e) => setDepartureTime(e.target.value)}
                     style={{
                       border: "none", background: "transparent", padding: 0,
-                      fontSize: "22px", fontWeight: 800, color: "#1A1A2E",
+                      fontSize: "22px", fontWeight: 800, color: "#1E1E2E",
                       outline: "none", cursor: "pointer", lineHeight: 1.1,
                       fontFamily: "var(--font-nunito), sans-serif",
                       width: "100px",
@@ -427,7 +427,7 @@ export default function SearchPageClient() {
                   {/* Track */}
                   <div style={{ position: "absolute", left: 0, right: 12, height: "3px", background: "#e5e7eb", borderRadius: "2px" }}>
                     {milestonePct !== null && (
-                      <div style={{ position: "absolute", left: 0, width: `${milestonePct}%`, height: "100%", background: "linear-gradient(to right, #FF6240, #FF8A6E)", borderRadius: "2px", transition: "width 0.15s" }} />
+                      <div style={{ position: "absolute", left: 0, width: `${milestonePct}%`, height: "100%", background: "linear-gradient(to right, #E8644A, #F09070)", borderRadius: "2px", transition: "width 0.15s" }} />
                     )}
                   </div>
 
@@ -457,7 +457,7 @@ export default function SearchPageClient() {
                       )}
                       {/* Bulle heure */}
                       <div style={{
-                        background: "#1A1A2E", color: "#fff",
+                        background: "#1E1E2E", color: "#fff",
                         fontSize: "11px", fontWeight: 800,
                         padding: "3px 9px", borderRadius: "10px",
                         whiteSpace: "nowrap", letterSpacing: "0.2px",
@@ -489,7 +489,7 @@ export default function SearchPageClient() {
                     }}>
                       {/* Bulle */}
                       <div style={{
-                        background: "#FF6240", color: "#fff",
+                        background: "#E8644A", color: "#fff",
                         fontSize: "11px", fontWeight: 800,
                         padding: "4px 10px", borderRadius: "10px",
                         whiteSpace: "nowrap",
@@ -504,13 +504,13 @@ export default function SearchPageClient() {
                         width: 0, height: 0,
                         borderLeft: "5px solid transparent",
                         borderRight: "5px solid transparent",
-                        borderTop: "6px solid #FF6240",
+                        borderTop: "6px solid #E8644A",
                         marginBottom: "1px",
                       }} />
                       {/* Point ancrage */}
                       <div style={{
                         width: "10px", height: "10px", borderRadius: "50%",
-                        background: "#FF6240", border: "2px solid #fff",
+                        background: "#E8644A", border: "2px solid #fff",
                         boxShadow: "0 0 0 3px rgba(255,98,64,0.25)",
                       }} />
                     </div>
@@ -524,12 +524,12 @@ export default function SearchPageClient() {
               {/* Arrivée */}
               <div style={{ display: "flex", flexDirection: "column", gap: "1px", alignItems: "flex-end" }}>
                 {destination && (
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1A1A2E", fontFamily: "var(--font-nunito), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px", textAlign: "right" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1E1E2E", fontFamily: "var(--font-nunito), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px", textAlign: "right" }}>
                     {destination.name.split(",")[0]}
                   </span>
                 )}
                 <span style={{
-                  fontSize: "22px", fontWeight: 800, color: "#FF6240", lineHeight: 1.1,
+                  fontSize: "22px", fontWeight: 800, color: "#E8644A", lineHeight: 1.1,
                   fontFamily: "var(--font-nunito), sans-serif",
                 }}>
                   {addMinutes(departureTime, routeDurationMin)}
@@ -563,8 +563,8 @@ export default function SearchPageClient() {
                   onClick={item.toggle}
                   style={{
                     padding: "8px 16px", borderRadius: "24px",
-                    border: item.active ? "2px solid #1A1A2E" : "1.5px solid #e5e7eb",
-                    background: item.active ? "#1A1A2E" : "#F8F7F4",
+                    border: item.active ? "2px solid #1E1E2E" : "1.5px solid #e5e7eb",
+                    background: item.active ? "#1E1E2E" : "#F8F7F4",
                     color: item.active ? "#FFFFFF" : "#374151",
                     fontSize: "13px", fontWeight: 700, cursor: "pointer",
                     transition: "all 0.15s", whiteSpace: "nowrap",
@@ -596,8 +596,8 @@ export default function SearchPageClient() {
             <p style={{ fontSize: "13px", color: "#6B7280" }}>Recherche des hôtels en cours...</p>
           ) : hotels.length > 0 ? (
             <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <p style={{ fontSize: "14px", fontWeight: 700, color: "#1A1A2E", fontFamily: "var(--font-nunito)", margin: 0 }}>
-              <span style={{ color: "#FF6240" }}>{filteredHotels.length}</span>{" "}
+            <p style={{ fontSize: "14px", fontWeight: 700, color: "#1E1E2E", fontFamily: "var(--font-nunito)", margin: 0 }}>
+              <span style={{ color: "#E8644A" }}>{filteredHotels.length}</span>{" "}
               hôtel{filteredHotels.length !== 1 ? "s" : ""}{milestonePct !== null ? ` autour de ${getTimeAtPct(milestonePct)}` : " sur votre route"}
               {filteredHotels.length < hotels.length && (
                 <span style={{ fontSize: "12px", color: "#6B7280", fontWeight: 400 }}>
@@ -608,7 +608,7 @@ export default function SearchPageClient() {
             {milestonePct !== null && (
               <button
                 onClick={() => setMilestonePct(null)}
-                style={{ fontSize: "11px", fontWeight: 700, color: "#FF6240", background: "rgba(255,98,64,0.08)", border: "1px solid rgba(255,98,64,0.2)", borderRadius: "20px", padding: "3px 10px", cursor: "pointer" }}
+                style={{ fontSize: "11px", fontWeight: 700, color: "#E8644A", background: "rgba(255,98,64,0.08)", border: "1px solid rgba(255,98,64,0.2)", borderRadius: "20px", padding: "3px 10px", cursor: "pointer" }}
               >
                 ✕ Retirer le repère
               </button>
@@ -626,7 +626,7 @@ export default function SearchPageClient() {
           ) : filteredHotels.length === 0 && hotels.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px", color: "#6B7280", textAlign: "center" }}>
               <div style={{ fontSize: "36px", marginBottom: "12px" }}>🔍</div>
-              <p style={{ fontSize: "14px", fontWeight: 600, color: "#1A1A2E", marginBottom: "6px" }}>Aucun résultat</p>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "#1E1E2E", marginBottom: "6px" }}>Aucun résultat</p>
               <p style={{ fontSize: "13px" }}>Essayez d&apos;élargir vos filtres</p>
             </div>
           ) : (
@@ -698,7 +698,7 @@ export default function SearchPageClient() {
             justifyContent: "center", gap: "3px",
             transition: "background 0.15s",
           }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "#FF6240")}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "#E8644A")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = "#d1d5db")}
         >
           <span style={{ fontSize: "7px", color: "#fff", lineHeight: 1, marginLeft: "-1px" }}>◀</span>

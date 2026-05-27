@@ -31,17 +31,17 @@ export default function HomePage() {
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div style={{
             width: "34px", height: "34px", borderRadius: "10px",
-            background: "linear-gradient(135deg, #FF6240, #FF8A6E)",
+            background: "linear-gradient(135deg, #E8644A, #F09070)",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px",
             boxShadow: "0 3px 10px rgba(255,98,64,0.3)",
           }}>🗺️</div>
-          <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "18px", color: "#FF6240" }}>KipWay</span>
+          <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "18px", color: "#E8644A" }}>KipWay</span>
         </div>
         <a
           href="#search"
           style={{
             padding: "8px 20px", borderRadius: "20px",
-            background: "#FF6240", color: "#FFFFFF",
+            background: "#E8644A", color: "#FFFFFF",
             fontSize: "13px", fontWeight: 700,
             textDecoration: "none",
             fontFamily: "var(--font-nunito), sans-serif",
@@ -59,7 +59,7 @@ export default function HomePage() {
         alignItems: "center", justifyContent: "center",
         padding: "60px 24px",
         textAlign: "center",
-        position: "relative", overflow: "hidden",
+        position: "relative",
       }}>
         {/* Background image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -92,7 +92,7 @@ export default function HomePage() {
             textShadow: "0 2px 20px rgba(0,0,0,0.3)",
           }}>
             Tous les hôtels{" "}
-            <span style={{ color: "#FF8A6E" }}>sur votre route</span>
+            <span style={{ color: "#F09070" }}>sur votre route</span>
           </h1>
 
           <p style={{
@@ -121,7 +121,7 @@ export default function HomePage() {
       {/* ── CTA FINAL ── */}
       <section style={{
         padding: "80px 24px",
-        background: "linear-gradient(135deg, #FF6240 0%, #FF8A6E 50%, #FFB347 100%)",
+        background: "linear-gradient(135deg, #E8644A 0%, #F09070 50%, #6FA8C0 100%)",
         textAlign: "center",
       }}>
         <h2 style={{
@@ -141,11 +141,11 @@ export default function HomePage() {
 
       {/* ── FOOTER ── */}
       <footer style={{
-        padding: "24px 32px", background: "#1A1A2E",
+        padding: "24px 32px", background: "#1E1E2E",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         flexWrap: "wrap", gap: "12px",
       }}>
-        <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "15px", color: "#FF6240" }}>
+        <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "15px", color: "#E8644A" }}>
           KipWay
         </span>
         <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>

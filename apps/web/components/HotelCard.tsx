@@ -34,7 +34,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
         borderRadius: "16px",
         overflow: "hidden",
         cursor: "pointer",
-        border: selected ? "2px solid #FF6240" : isTight ? "2px solid #F59E0B" : "2px solid transparent",
+        border: selected ? "2px solid #E8644A" : isTight ? "2px solid #F59E0B" : "2px solid transparent",
         boxShadow: selected ? "0 4px 20px rgba(255,98,64,0.2)" : "0 2px 8px rgba(0,0,0,0.07)",
         transition: "all 0.18s ease",
         transform: selected ? "translateY(-2px)" : "none",
@@ -80,7 +80,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
           <div style={{
             position: "absolute", bottom: "8px", right: "8px",
             background: "rgba(255,255,255,0.95)", borderRadius: "8px",
-            padding: "3px 8px", fontSize: "13px", fontWeight: 700, color: "#1A1A2E",
+            padding: "3px 8px", fontSize: "13px", fontWeight: 700, color: "#1E1E2E",
             boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
           }}>
             {hotel.pricePerNight} €
@@ -91,7 +91,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
       {/* Infos */}
       <div style={{ padding: "11px 13px 13px" }}>
         <div style={{
-          fontSize: "14px", fontWeight: 700, color: "#1A1A2E",
+          fontSize: "14px", fontWeight: 700, color: "#1E1E2E",
           marginBottom: "2px", whiteSpace: "nowrap",
           overflow: "hidden", textOverflow: "ellipsis",
           fontFamily: "var(--font-nunito), sans-serif",
@@ -102,7 +102,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
           {hotel.city}
           {hotel.rating && (
             <span style={{ marginLeft: "8px" }}>
-              ★ <strong style={{ color: "#1A1A2E" }}>{hotel.rating}</strong>
+              ★ <strong style={{ color: "#1E1E2E" }}>{hotel.rating}</strong>
             </span>
           )}
         </div>
@@ -110,7 +110,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
         {/* Détour en temps */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "7px", flexWrap: "wrap" }}>
           <span style={{
-            fontSize: "12px", color: "#00B4D8", fontWeight: 700,
+            fontSize: "12px", color: "#6FA8C0", fontWeight: 700,
             background: "rgba(0,180,216,0.08)", padding: "3px 9px", borderRadius: "20px",
           }}>
             {hotel.detourMinutes === 0 ? "Sur la route" : `+${hotel.detourMinutes} min`}
@@ -134,7 +134,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
             border: isLate ? "1px solid rgba(239,68,68,0.2)" : isTight ? "1px solid rgba(245,158,11,0.25)" : "1px solid transparent",
           }}>
             <span style={{ fontSize: "11px", color: "#6B7280" }}>
-              Check-in max&nbsp;<strong style={{ color: "#1A1A2E" }}>{hotel.checkinDeadline}</strong>
+              Check-in max&nbsp;<strong style={{ color: "#1E1E2E" }}>{hotel.checkinDeadline}</strong>
             </span>
             {estimatedArrival && (
               <span style={{
@@ -149,7 +149,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
 
         {/* Prix */}
         {hotel.pricePerNight && (
-          <div style={{ marginTop: "8px", fontSize: "13px", color: "#1A1A2E" }}>
+          <div style={{ marginTop: "8px", fontSize: "13px", color: "#1E1E2E" }}>
             <span style={{ fontWeight: 700 }}>{hotel.pricePerNight} €</span>
             <span style={{ color: "#6B7280" }}> / nuit</span>
           </div>
