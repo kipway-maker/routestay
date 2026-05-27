@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface Place { name: string; lat: number; lng: number; }
 
-// Cache module-level : survit aux re-renders, vide à chaque reload page
 const geocodeCache = new Map<string, Place[]>();
+
+interface DropdownState {
+  suggestions: Place[];
+  activeIdx: number;
+  onSelect: (p: Place) => void;
+  onSetActiveIdx: (i: number) => void;
+}
 
 interface SearchBarProps {
   onSearch: (origin: Place, destination: Place) => void;
@@ -20,7 +26,7 @@ function AddressInput({
   value,
   onSelect,
   compact,
-  isLast,
+  onDropdownChange,
 }: {
   label: string;
   placeholder: string;
@@ -28,7 +34,7 @@ function AddressInput({
   value: Place | null;
   onSelect: (place: Place) => void;
   compact?: boolean;
-  isLast?: boolean;
+  onDropdownChange?: (state: DropdownState | null) => void;
 }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Place[]>([]);
@@ -36,12 +42,30 @@ function AddressInput({
   const [focused, setFocused] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (value) setQuery(value.name.split(",")[0]);
   }, [value]);
+
+  const handleSelect = useCallback((place: Place) => {
+    setQuery(place.name.split(",")[0]);
+    setSuggestions([]);
+    setOpen(false);
+    setActiveIdx(-1);
+    onDropdownChange?.(null);
+    onSelect(place);
+  }, [onSelect, onDropdownChange]);
+
+  // Notify parent of dropdown state changes
+  useEffect(() => {
+    if (!onDropdownChange) return;
+    if (open && suggestions.length > 0) {
+      onDropdownChange({ suggestions, activeIdx, onSelect: handleSelect, onSetActiveIdx: setActiveIdx });
+    } else {
+      onDropdownChange(null);
+    }
+  }, [open, suggestions, activeIdx, handleSelect, onDropdownChange]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const q = e.target.value;
@@ -50,7 +74,6 @@ function AddressInput({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (q.length < 1) { setSuggestions([]); setOpen(false); return; }
 
-    // Résultat en cache → instantané
     if (geocodeCache.has(q)) {
       const cached = geocodeCache.get(q)!;
       setSuggestions(cached);
@@ -69,45 +92,28 @@ function AddressInput({
     }, 100);
   }
 
-  function handleSelect(place: Place) {
-    setQuery(place.name.split(",")[0]);
-    setSuggestions([]);
-    setOpen(false);
-    setActiveIdx(-1);
-    onSelect(place);
-  }
-
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (!open) return;
+    if (!open || suggestions.length === 0) return;
     if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); }
     else if (e.key === "Enter" && activeIdx >= 0) { e.preventDefault(); handleSelect(suggestions[activeIdx]); }
     else if (e.key === "Escape") { setOpen(false); setActiveIdx(-1); }
   }
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) { setOpen(false); setActiveIdx(-1); }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
   const vPad = compact ? "12px 20px" : "22px 36px";
 
   return (
     <div
-      ref={containerRef}
       onClick={() => inputRef.current?.focus()}
       style={{
         flex: 1, minWidth: 0,
         padding: vPad,
-        paddingRight: compact ? "20px" : "48px", // espace pour le ×
+        paddingRight: compact ? "20px" : "48px",
         cursor: "text",
-        borderRadius: isLast ? "0 50px 50px 0" : "0",
-        background: focused ? "rgba(255,98,64,0.04)" : "transparent",
+        background: focused ? "rgba(232,100,74,0.04)" : "transparent",
         transition: "background 0.15s",
         position: "relative",
+        borderRadius: "50px",
       }}
     >
       <div style={{
@@ -124,7 +130,7 @@ function AddressInput({
         value={query}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => { setFocused(true); suggestions.length > 0 && setOpen(true); }}
+        onFocus={() => { setFocused(true); if (suggestions.length > 0) setOpen(true); }}
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
         autoComplete="off"
@@ -139,10 +145,14 @@ function AddressInput({
           lineHeight: 1.3,
         }}
       />
-      {/* × absolu, visible uniquement au focus */}
       {focused && query && (
         <button
-          onMouseDown={(e) => { e.preventDefault(); setQuery(""); setSuggestions([]); setOpen(false); inputRef.current?.focus(); }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setQuery(""); setSuggestions([]); setOpen(false);
+            onDropdownChange?.(null);
+            inputRef.current?.focus();
+          }}
           style={{
             position: "absolute", top: "50%", right: compact ? "10px" : "14px",
             transform: "translateY(-50%)",
@@ -152,54 +162,6 @@ function AddressInput({
             fontSize: "14px", color: "#6B7280", lineHeight: 1,
           }}
         >×</button>
-      )}
-
-      {/* Dropdown */}
-      {open && suggestions.length > 0 && (
-        <div style={{
-          position: "absolute",
-          top: "calc(100% + 8px)",
-          left: isLast ? undefined : 0,
-          right: isLast ? 0 : undefined,
-          width: "min(620px, 90vw)",
-          background: "#FFFFFF",
-          borderRadius: "16px",
-          boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
-          zIndex: 500,
-          overflow: "hidden",
-          border: "1px solid rgba(0,0,0,0.06)",
-          animation: "dropIn 0.15s ease",
-        }}>
-          <style>{`
-            @keyframes dropIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
-            @keyframes spin { to { transform: rotate(360deg); } }
-          `}</style>
-          {suggestions.map((s, i) => (
-            <button
-              key={i}
-              onMouseDown={() => handleSelect(s)}
-              onMouseEnter={() => setActiveIdx(i)}
-              style={{
-                display: "flex", alignItems: "center",
-                width: "100%", padding: "12px 18px",
-                textAlign: "left", border: "none",
-                background: i === activeIdx ? "#FFF5F3" : "transparent",
-                cursor: "pointer",
-                borderBottom: i < suggestions.length - 1 ? "1px solid #f9f9f9" : "none",
-                transition: "background 0.1s",
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: "14px", fontWeight: 600, color: "#1E1E2E", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {s.name.split(",")[0]}
-                </div>
-                <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {s.name.split(",").slice(1, 3).join(",")}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
       )}
     </div>
   );
@@ -214,10 +176,70 @@ function Divider() {
   );
 }
 
+// Dropdown rendered at pill level — full width, DA matching the pill
+function PillDropdown({ dropdown, compact }: { dropdown: DropdownState; compact: boolean }) {
+  return (
+    <div style={{
+      position: "absolute",
+      top: "calc(100% + 10px)",
+      left: 0,
+      right: 0,
+      background: "#FFFFFF",
+      borderRadius: compact ? "20px" : "28px",
+      border: "1.5px solid #e5e7eb",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.10)",
+      zIndex: 500,
+      overflow: "hidden",
+      animation: "dropIn 0.15s ease",
+    }}>
+      <style>{`@keyframes dropIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }`}</style>
+      {dropdown.suggestions.map((s, i) => (
+        <button
+          key={i}
+          onMouseDown={() => dropdown.onSelect(s)}
+          onMouseEnter={() => dropdown.onSetActiveIdx(i)}
+          style={{
+            display: "flex", alignItems: "center",
+            width: "100%",
+            padding: compact ? "10px 20px" : "14px 36px",
+            textAlign: "left", border: "none",
+            background: i === dropdown.activeIdx ? "rgba(232,100,74,0.06)" : "transparent",
+            cursor: "pointer",
+            borderBottom: i < dropdown.suggestions.length - 1 ? "1px solid #f3f4f6" : "none",
+            transition: "background 0.1s",
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: compact ? "14px" : "16px", fontWeight: 600, color: "#1E1E2E", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {s.name.split(",")[0]}
+            </div>
+            <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {s.name.split(",").slice(1, 3).join(",")}
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function SearchBar({ onSearch, loading, compact = false }: SearchBarProps) {
   const [origin, setOrigin] = useState<Place | null>(null);
   const [destination, setDestination] = useState<Place | null>(null);
+  const [dropdown, setDropdown] = useState<DropdownState | null>(null);
+  const pillRef = useRef<HTMLDivElement>(null);
   const canSearch = !!origin && !!destination && !loading;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (pillRef.current && !pillRef.current.contains(e.target as Node)) {
+        setDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const pillStyle: React.CSSProperties = {
     display: "flex",
@@ -225,9 +247,7 @@ export default function SearchBar({ onSearch, loading, compact = false }: Search
     background: "#FFFFFF",
     border: "1.5px solid #e5e7eb",
     borderRadius: "50px",
-    boxShadow: compact
-      ? "0 2px 10px rgba(0,0,0,0.07)"
-      : "0 4px 24px rgba(0,0,0,0.1)",
+    boxShadow: compact ? "0 2px 10px rgba(0,0,0,0.07)" : "0 4px 24px rgba(0,0,0,0.1)",
     overflow: "visible",
     position: "relative",
     transition: "box-shadow 0.2s",
@@ -250,64 +270,40 @@ export default function SearchBar({ onSearch, loading, compact = false }: Search
     letterSpacing: "0.2px",
   };
 
+  const commonInputProps = { compact, onDropdownChange: setDropdown };
+
   if (compact) {
     return (
-      <div style={pillStyle}>
-        <AddressInput
-          label="Départ"
-          placeholder="D'où partez-vous ?"
+      <div ref={pillRef} style={pillStyle}>
+        <AddressInput label="Départ" placeholder="D'où partez-vous ?" value={origin} onSelect={setOrigin}
           icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="#E8644A"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>}
-          value={origin}
-          onSelect={setOrigin}
-          compact
-        />
+          {...commonInputProps} />
         <Divider />
-        <AddressInput
-          label="Arrivée"
-          placeholder="Où allez-vous ?"
+        <AddressInput label="Arrivée" placeholder="Où allez-vous ?" value={destination} onSelect={setDestination}
           icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="#6B7280"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>}
-          value={destination}
-          onSelect={setDestination}
-          compact
-          isLast
-        />
-        <button
-          onClick={() => canSearch && onSearch(origin!, destination!)}
-          disabled={!canSearch}
-          style={btnStyle}
-        >
+          {...commonInputProps} />
+        <button onClick={() => canSearch && onSearch(origin!, destination!)} disabled={!canSearch} style={btnStyle}>
           {loading ? "..." : "Chercher →"}
         </button>
+        {dropdown && <PillDropdown dropdown={dropdown} compact />}
       </div>
     );
   }
 
   return (
     <div style={{ width: "100%" }}>
-      <div style={pillStyle}>
-        <AddressInput
-          label="Départ"
-          placeholder="D'où partez-vous ?"
+      <div ref={pillRef} style={pillStyle}>
+        <AddressInput label="Départ" placeholder="D'où partez-vous ?" value={origin} onSelect={setOrigin}
           icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="#E8644A"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>}
-          value={origin}
-          onSelect={setOrigin}
-        />
+          {...commonInputProps} />
         <Divider />
-        <AddressInput
-          label="Arrivée"
-          placeholder="Où allez-vous ?"
+        <AddressInput label="Arrivée" placeholder="Où allez-vous ?" value={destination} onSelect={setDestination}
           icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="#6B7280"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>}
-          value={destination}
-          onSelect={setDestination}
-          isLast
-        />
-        <button
-          onClick={() => canSearch && onSearch(origin!, destination!)}
-          disabled={!canSearch}
-          style={btnStyle}
-        >
+          {...commonInputProps} />
+        <button onClick={() => canSearch && onSearch(origin!, destination!)} disabled={!canSearch} style={btnStyle}>
           {loading ? "Recherche..." : "Voir les hôtels →"}
         </button>
+        {dropdown && <PillDropdown dropdown={dropdown} compact={false} />}
       </div>
     </div>
   );
