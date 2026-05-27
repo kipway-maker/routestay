@@ -90,7 +90,7 @@ export async function searchHotelsAlongRoute(
             pricePerNight: price ? parseFloat(price) : null,
             currency: "EUR",
             rating: hotel.rating ? parseFloat(hotel.rating) : null,
-            imageUrl: MOCK_IMAGES[Math.floor(Math.random() * MOCK_IMAGES.length)],
+            imageUrl: MOCK_IMAGES_BY_TYPE["hotel"][Math.floor(Math.random() * MOCK_IMAGES_BY_TYPE["hotel"].length)],
             checkinDeadline: null,
             hasEVCharger: false,
             accommodationType: "hotel" as const,
