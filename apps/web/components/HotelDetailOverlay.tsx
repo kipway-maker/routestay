@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Hotel } from "@/lib/amadeus";
 
 interface Props {
   hotel: Hotel;
   estimatedArrival: string | null;
+  departureDate: string | null; // "YYYY-MM-DD"
   onClose: () => void;
 }
 
@@ -19,15 +21,48 @@ function timeToMin(t: string): number {
   return h * 60 + m;
 }
 
-export default function HotelDetailOverlay({ hotel, estimatedArrival, onClose }: Props) {
+function addDayToDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().split("T")[0];
+}
+
+export default function HotelDetailOverlay({ hotel, estimatedArrival, departureDate, onClose }: Props) {
+  const photos = hotel.images?.length ? hotel.images : [hotel.imageUrl];
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const [copied, setCopied] = useState(false);
+
   const isLate = !!(
     estimatedArrival &&
     hotel.checkinDeadline &&
     timeToMin(estimatedArrival) > timeToMin(hotel.checkinDeadline)
   );
 
-  const bookingUrl = hotel.bookingUrl ||
-    `https://www.booking.com/search.html?ss=${encodeURIComponent(hotel.name + ", " + hotel.city)}`;
+  // Build Booking URL with checkin/checkout if date is set
+  let bookingUrl = hotel.bookingUrl || "";
+  if (!bookingUrl) {
+    const baseSearch = `https://www.booking.com/search.html?ss=${encodeURIComponent(hotel.name + ", " + hotel.city)}`;
+    if (departureDate) {
+      const checkout = addDayToDate(departureDate);
+      bookingUrl = `${baseSearch}&checkin=${departureDate}&checkout=${checkout}&group_adults=1&no_rooms=1`;
+    } else {
+      bookingUrl = baseSearch;
+    }
+  }
+
+  async function handleShare() {
+    const arrivalPart = estimatedArrival ? ` nous fait arriver à ${estimatedArrival}` : "";
+    const shareText = `[Kipway] J'ai trouvé un hôtel sur notre route ! L'hôtel ${hotel.name} à ${hotel.city}${arrivalPart} 👉 Voir l'hôtel : ${bookingUrl}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `[Kipway] ${hotel.name}`, text: shareText });
+      } catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
 
   return (
     <>
@@ -57,32 +92,93 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, onClose }:
         display: "flex", flexDirection: "column",
       }}>
 
-        {/* Photo */}
+        {/* ── CAROUSEL ── */}
         <div style={{ position: "relative", height: "260px", flexShrink: 0, background: "#f3f4f6" }}>
           <img
-            src={hotel.imageUrl}
+            key={photoIdx}
+            src={photos[photoIdx]}
             alt={hotel.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.2s" }}
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
           />
 
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            style={{
-              position: "absolute", top: "14px", right: "14px",
-              width: "36px", height: "36px", borderRadius: "50%",
-              background: "rgba(255,255,255,0.92)",
-              border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "18px", color: "#1A1A2E",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-            }}
-          >
-            ×
-          </button>
+          {/* Prev / Next arrows */}
+          {photos.length > 1 && (
+            <>
+              <button
+                onClick={() => setPhotoIdx((i) => (i - 1 + photos.length) % photos.length)}
+                style={{
+                  position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)",
+                  width: "34px", height: "34px", borderRadius: "50%",
+                  background: "rgba(255,255,255,0.88)", border: "none", cursor: "pointer",
+                  fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", color: "#1A1A2E",
+                }}
+              >‹</button>
+              <button
+                onClick={() => setPhotoIdx((i) => (i + 1) % photos.length)}
+                style={{
+                  position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)",
+                  width: "34px", height: "34px", borderRadius: "50%",
+                  background: "rgba(255,255,255,0.88)", border: "none", cursor: "pointer",
+                  fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", color: "#1A1A2E",
+                }}
+              >›</button>
 
-          {/* Badges */}
+              {/* Dots */}
+              <div style={{
+                position: "absolute", bottom: "48px", left: "50%", transform: "translateX(-50%)",
+                display: "flex", gap: "6px",
+              }}>
+                {photos.map((_, k) => (
+                  <button
+                    key={k}
+                    onClick={() => setPhotoIdx(k)}
+                    style={{
+                      width: k === photoIdx ? "18px" : "6px",
+                      height: "6px",
+                      borderRadius: "3px",
+                      background: k === photoIdx ? "#FF6240" : "rgba(255,255,255,0.7)",
+                      border: "none", cursor: "pointer", padding: 0,
+                      transition: "width 0.2s",
+                    }}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Top-right buttons: close + share */}
+          <div style={{ position: "absolute", top: "14px", right: "14px", display: "flex", gap: "8px" }}>
+            <button
+              onClick={handleShare}
+              style={{
+                width: "36px", height: "36px", borderRadius: "50%",
+                background: "rgba(255,255,255,0.92)",
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "16px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              }}
+              title={copied ? "Copié !" : "Partager"}
+            >
+              {copied ? "✓" : "⬆"}
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                width: "36px", height: "36px", borderRadius: "50%",
+                background: "rgba(255,255,255,0.92)",
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "18px", color: "#1A1A2E",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              }}
+            >×</button>
+          </div>
+
+          {/* EV Badge */}
           <div style={{ position: "absolute", top: "14px", left: "14px", display: "flex", gap: "6px" }}>
             {hotel.hasEVCharger && (
               <span style={{
@@ -109,7 +205,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, onClose }:
           )}
         </div>
 
-        {/* Content */}
+        {/* ── CONTENT ── */}
         <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
 
           {/* Name + city */}
@@ -173,9 +269,22 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, onClose }:
                 <span style={{ fontSize: "18px", fontWeight: 800, color: "#06D6A0" }}>+20 min</span>
               </div>
             )}
+
+            {/* Date de nuit */}
+            {departureDate && (
+              <div style={{
+                background: "#F0F7FF", borderRadius: "14px", padding: "14px",
+                display: "flex", flexDirection: "column", gap: "4px",
+              }}>
+                <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Nuit du</span>
+                <span style={{ fontSize: "15px", fontWeight: 800, color: "#1A1A2E" }}>
+                  {new Date(departureDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* CTA */}
+          {/* CTA Booking */}
           <a
             href={bookingUrl}
             target="_blank"
@@ -190,11 +299,12 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, onClose }:
               fontFamily: "var(--font-nunito), sans-serif",
               boxShadow: "0 4px 16px rgba(255,98,64,0.35)",
               transition: "all 0.15s",
+              boxSizing: "border-box",
             }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#e8502e")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#FF6240")}
           >
-            Voir l&apos;hôtel →
+            {departureDate ? `Voir les dispo du ${new Date(departureDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} →` : "Voir l'hôtel →"}
           </a>
         </div>
       </div>

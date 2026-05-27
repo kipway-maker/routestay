@@ -85,10 +85,11 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
       zoomControl={true}
     >
       <TileLayer
-        attribution='&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
-        url={`https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png${process.env.NEXT_PUBLIC_STADIA_API_KEY ? `?api_key=${process.env.NEXT_PUBLIC_STADIA_API_KEY}` : ""}`}
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        subdomains="abcd"
         minZoom={0}
-        maxZoom={20}
+        maxZoom={19}
       />
 
       <FitBounds route={route} origin={origin} destination={destination} />

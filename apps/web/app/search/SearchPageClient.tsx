@@ -106,6 +106,7 @@ export default function SearchPageClient() {
   const [selectedHotel, setSelectedHotel] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [departureTime, setDepartureTime] = useState<string>(getNowHHMM());
+  const [departureDate, setDepartureDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
   const [useArrivalCheck, setUseArrivalCheck] = useState(false);
   const [filterReception24h, setFilterReception24h] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -358,6 +359,19 @@ export default function SearchPageClient() {
                   />
                 </div>
                 <span style={{ fontSize: "10px", fontWeight: 600, color: "#9ca3af", letterSpacing: "0.5px" }}>heure de départ</span>
+                {/* Date picker */}
+                <input
+                  type="date"
+                  value={departureDate}
+                  onChange={(e) => setDepartureDate(e.target.value)}
+                  style={{
+                    border: "none", background: "transparent", padding: 0,
+                    fontSize: "11px", fontWeight: 600, color: "#6B7280",
+                    outline: "none", cursor: "pointer",
+                    fontFamily: "var(--font-inter), sans-serif",
+                    marginTop: "2px",
+                  }}
+                />
               </div>
 
               {/* Ligne interactive milestones */}
@@ -722,6 +736,7 @@ export default function SearchPageClient() {
           <HotelDetailOverlay
             hotel={h}
             estimatedArrival={getArrival(h)}
+            departureDate={departureDate}
             onClose={() => setExpandedHotelId(null)}
           />
         ) : null;

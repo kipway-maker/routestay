@@ -31,6 +31,7 @@ export interface Hotel {
   accommodationType: "hotel" | "bb" | "auberge" | "camping";
   source: "amadeus" | "mock";
   bookingUrl?: string;
+  images: string[]; // carousel
 }
 
 export async function searchHotelsAlongRoute(
@@ -91,6 +92,7 @@ export async function searchHotelsAlongRoute(
             currency: "EUR",
             rating: hotel.rating ? parseFloat(hotel.rating) : null,
             imageUrl: MOCK_IMAGES_BY_TYPE["hotel"][Math.floor(Math.random() * MOCK_IMAGES_BY_TYPE["hotel"].length)],
+            images: [MOCK_IMAGES_BY_TYPE["hotel"][Math.floor(Math.random() * MOCK_IMAGES_BY_TYPE["hotel"].length)]],
             checkinDeadline: null,
             hasEVCharger: false,
             accommodationType: "hotel" as const,
@@ -200,6 +202,12 @@ function generateMockHotels(points: Array<{ lat: number; lng: number }>): Hotel[
           const type = ACCOM_TYPES[(i * 3 + j) % ACCOM_TYPES.length];
           const imgs = MOCK_IMAGES_BY_TYPE[type];
           return imgs[(i * 3 + j) % imgs.length];
+        })(),
+        images: (() => {
+          const type = ACCOM_TYPES[(i * 3 + j) % ACCOM_TYPES.length];
+          const imgs = MOCK_IMAGES_BY_TYPE[type];
+          // 3 photos décalées pour le carousel
+          return [0, 1, 2].map((k) => imgs[(i * 3 + j + k) % imgs.length]);
         })(),
         checkinDeadline: CHECKIN_DEADLINES[(i * 3 + j) % CHECKIN_DEADLINES.length],
         hasEVCharger: (i * 3 + j) % 3 === 0,
