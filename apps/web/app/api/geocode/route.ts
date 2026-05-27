@@ -44,6 +44,14 @@ export async function GET(req: NextRequest) {
         _type: type,
       };
     })
+    // Relevance guard: the primary label (before first comma) must contain
+    // at least one word from the query — filters out OSM results that match
+    // "Paris" deep in their address hierarchy but have an unrelated primary name
+    .filter((item: any) => {
+      const label = item.name.split(",")[0].toLowerCase().trim();
+      const words = q.toLowerCase().trim().split(/\s+/).filter((w: string) => w.length >= 2);
+      return words.some((w: string) => label.includes(w));
+    })
     // Deduplicate: same name → keep only first occurrence
     .filter((item: any) => {
       const key = item.name.trim().toLowerCase();
