@@ -19,7 +19,7 @@ const features = [
     bgColor: "rgba(0, 180, 216, 0.1)",
     title: "Comparez les prix en temps réel",
     description:
-      "RouteStay agrège les offres de Booking, Expedia, Hotels.com et plus encore. Vous voyez les meilleurs prix disponibles instantanément, sans aller-retour entre les sites.",
+      "KipWay agrège les offres de Booking, Expedia, Hotels.com et plus encore. Vous voyez les meilleurs prix disponibles instantanément, sans aller-retour entre les sites.",
     stat: "15+",
     statLabel: "plateformes comparées",
   },
@@ -62,7 +62,7 @@ export default function FeaturesSection() {
               fontFamily: "var(--font-inter), sans-serif",
             }}
           >
-            ✨ Pourquoi RouteStay
+            ✨ Pourquoi KipWay
           </div>
           <h2
             style={{
@@ -87,7 +87,7 @@ export default function FeaturesSection() {
             }}
           >
             Plus besoin de jongler entre Google Maps et les sites de réservation.
-            RouteStay fait tout ça pour vous, en une seule interface.
+            KipWay fait tout ça pour vous, en une seule interface.
           </p>
         </div>
 

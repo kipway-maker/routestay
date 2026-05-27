@@ -122,7 +122,7 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
           zIndexOffset={selectedHotelId === hotel.id ? 1000 : 0}
           eventHandlers={{ click: () => onSelectHotel(hotel.id) }}
         >
-          <Popup maxWidth={300} className="routestay-popup">
+          <Popup maxWidth={300} className="kipway-popup">
             <div style={{ width: "280px", fontFamily: "system-ui, sans-serif", padding: "8px" }}>
               <div style={{ position: "relative", width: "100%", height: "160px", background: "#f3f4f6", borderRadius: "14px", overflow: "hidden", marginBottom: "16px" }}>
                 <img src={hotel.imageUrl} alt={hotel.name}

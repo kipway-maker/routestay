@@ -1,5 +1,5 @@
 {
-  "name": "@routestay/web",
+  "name": "@kipway/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@routestay/core": "*",
-    "@routestay/ui": "*",
+    "@kipway/core": "*",
+    "@kipway/ui": "*",
     "@tanstack/react-query": "^5.80.0",
     "@types/leaflet": "^1.9.21",
     "amadeus": "^11.0.0",

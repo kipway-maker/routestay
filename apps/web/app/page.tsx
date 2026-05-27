@@ -35,7 +35,7 @@ export default function HomePage() {
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px",
             boxShadow: "0 3px 10px rgba(255,98,64,0.3)",
           }}>🗺️</div>
-          <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "18px", color: "#FF6240" }}>RouteStay</span>
+          <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "18px", color: "#FF6240" }}>KipWay</span>
         </div>
         <a
           href="#search"
@@ -146,10 +146,10 @@ export default function HomePage() {
         flexWrap: "wrap", gap: "12px",
       }}>
         <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "15px", color: "#FF6240" }}>
-          RouteStay
+          KipWay
         </span>
         <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>
-          © 2025 RouteStay · Données cartographiques OpenStreetMap
+          © 2025 KipWay · Données cartographiques OpenStreetMap
         </span>
       </footer>
     </div>

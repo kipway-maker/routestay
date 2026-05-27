@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   if (!q || q.length < 3) return NextResponse.json([]);
 
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1&accept-language=fr`;
-  const res = await fetch(url, { headers: { "User-Agent": "RouteStay/1.0" } });
+  const res = await fetch(url, { headers: { "User-Agent": "KipWay/1.0" } });
   const data = await res.json();
 
   return NextResponse.json(

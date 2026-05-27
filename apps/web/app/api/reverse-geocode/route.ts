@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=fr`;
     const res = await fetch(url, {
-      headers: { "User-Agent": "RouteStay/1.0" },
+      headers: { "User-Agent": "KipWay/1.0" },
       next: { revalidate: 86400 }, // cache 24h côté serveur
     });
     const data = await res.json();

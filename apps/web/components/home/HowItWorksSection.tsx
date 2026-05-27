@@ -24,7 +24,7 @@ const steps = [
     gradientTo: "#48CAE4",
     title: "Découvrez les hôtels",
     description:
-      "RouteStay affiche sur une carte interactive tous les hôtels disponibles le long de votre route. Filtrez par prix, note, distance ou équipements.",
+      "KipWay affiche sur une carte interactive tous les hôtels disponibles le long de votre route. Filtrez par prix, note, distance ou équipements.",
     tip: "Filtres avancés : piscine, parking, animaux acceptés, wifi...",
   },
   {
@@ -109,7 +109,7 @@ export default function HowItWorksSection() {
               lineHeight: 1.7,
             }}
           >
-            De l'itinéraire à la réservation, RouteStay vous guide à chaque étape.
+            De l'itinéraire à la réservation, KipWay vous guide à chaque étape.
           </p>
         </div>
 

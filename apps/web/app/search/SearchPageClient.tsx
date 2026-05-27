@@ -279,7 +279,7 @@ export default function SearchPageClient() {
                 fontSize: "15px", boxShadow: "0 2px 8px rgba(255,98,64,0.3)",
               }}>🗺️</div>
               <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: "15px", color: "#FF6240" }}>
-                RouteStay
+                KipWay
               </span>
             </div>
           </Link>
