@@ -8,7 +8,13 @@ const nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito" });
 export const metadata: Metadata = {
   title: "KipWay — L'hébergement en route",
   description: "Trouvez un hôtel sur votre route en un clic. KipWay calcule votre trajet et affiche tous les hébergements disponibles sur le chemin.",
-  icons: { icon: "/favicon-kipway.png" },
+  icons: {
+    icon: [
+      { url: "/favicon-kipway.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-kipway.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: "/favicon-kipway.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

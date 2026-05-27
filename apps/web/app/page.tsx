@@ -25,12 +25,14 @@ export default function HomePage() {
         position: "sticky", top: 0, zIndex: 50,
         background: "rgba(248,247,244,0.92)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(0,0,0,0.07)",
-        padding: "0 32px", height: "60px",
+        borderTop: "3px solid transparent",
+        borderImage: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0) 1",
+        padding: "0 32px", height: "63px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-kipway.png" alt="KipWay" style={{ height: "36px", width: "auto" }} />
+          <img src="/logo-kipway.png" alt="KipWay" style={{ height: "46px", width: "auto", mixBlendMode: "multiply" }} />
         </div>
         <a
           href="#search"

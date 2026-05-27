@@ -265,15 +265,18 @@ export default function SearchPageClient() {
 
         {/* Header : logo + search + filtres */}
         <div style={{
-          padding: "14px 20px",
+          padding: "12px 20px",
           background: "#FFFFFF",
           borderBottom: "1px solid rgba(0,0,0,0.07)",
           flexShrink: 0,
           display: "flex", alignItems: "center", gap: "12px",
+          boxShadow: "0 2px 0 0 transparent",
+          borderTop: "3px solid transparent",
+          borderImage: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0) 1",
         }}>
           <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-kipway.png" alt="KipWay" style={{ height: "30px", width: "auto" }} />
+            <img src="/logo-kipway.png" alt="KipWay" style={{ height: "38px", width: "auto", mixBlendMode: "multiply" }} />
           </Link>
 
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -288,8 +291,8 @@ export default function SearchPageClient() {
                 flexShrink: 0,
                 display: "flex", alignItems: "center", gap: "6px",
                 padding: "7px 14px", borderRadius: "20px",
-                border: activeFilters > 0 ? "1.5px solid #1E1E2E" : "1.5px solid #e5e7eb",
-                background: activeFilters > 0 ? "#1E1E2E" : "#FFFFFF",
+                border: activeFilters > 0 ? "1.5px solid #E8644A" : "1.5px solid #e5e7eb",
+                background: activeFilters > 0 ? "#E8644A" : "#FFFFFF",
                 color: activeFilters > 0 ? "#FFFFFF" : "#1E1E2E",
                 fontSize: "13px", fontWeight: 600, cursor: "pointer",
                 transition: "all 0.15s",
@@ -321,7 +324,7 @@ export default function SearchPageClient() {
         {routeDurationMin > 0 && (
           <div style={{
             padding: "16px 20px 14px",
-            background: "#FFFFFF",
+            background: "linear-gradient(180deg, rgba(232,100,74,0.04) 0%, #FFFFFF 60%)",
             borderBottom: "1px solid rgba(0,0,0,0.07)",
             flexShrink: 0,
           }}>
@@ -529,6 +532,39 @@ export default function SearchPageClient() {
               </div>
             </div>
 
+            {/* Toggle check-in */}
+            <button
+              onClick={() => setUseArrivalCheck((v) => !v)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                width: "100%", background: useArrivalCheck ? "rgba(232,100,74,0.07)" : "#F8F7F4",
+                border: useArrivalCheck ? "1.5px solid rgba(232,100,74,0.3)" : "1.5px solid #e5e7eb",
+                borderRadius: "14px", padding: "10px 14px",
+                cursor: "pointer", marginBottom: "10px",
+                transition: "all 0.2s",
+              }}
+            >
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "#1E1E2E", display: "flex", alignItems: "center", gap: "8px" }}>
+                🔔 Prendre en compte l'heure des check-in
+              </span>
+              {/* Toggle pill */}
+              <div style={{
+                width: "42px", height: "24px", borderRadius: "12px",
+                background: useArrivalCheck ? "#E8644A" : "#d1d5db",
+                position: "relative", flexShrink: 0,
+                transition: "background 0.2s",
+              }}>
+                <div style={{
+                  position: "absolute", top: "3px",
+                  left: useArrivalCheck ? "21px" : "3px",
+                  width: "18px", height: "18px", borderRadius: "50%",
+                  background: "#fff",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                  transition: "left 0.2s",
+                }} />
+              </div>
+            </button>
+
             {/* Filtres rapides */}
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {([
@@ -544,22 +580,18 @@ export default function SearchPageClient() {
                   key: "nodetour", label: "↗ Sans détour", active: filters.maxDetourMin === 5,
                   toggle: () => setFilters((f) => ({ ...f, maxDetourMin: f.maxDetourMin === 5 ? null : 5 })),
                 },
-                {
-                  key: "checkin", label: "🔔 Vérifier check-ins", active: useArrivalCheck,
-                  toggle: () => setUseArrivalCheck((v) => !v),
-                },
               ] as { key: string; label: string; active: boolean; toggle: () => void }[]).map((item) => (
                 <button
                   key={item.key}
                   onClick={item.toggle}
                   style={{
                     padding: "8px 16px", borderRadius: "24px",
-                    border: item.active ? "2px solid #1E1E2E" : "1.5px solid #e5e7eb",
-                    background: item.active ? "#1E1E2E" : "#F8F7F4",
+                    border: item.active ? "2px solid #E8644A" : "1.5px solid #e5e7eb",
+                    background: item.active ? "#E8644A" : "#F8F7F4",
                     color: item.active ? "#FFFFFF" : "#374151",
                     fontSize: "13px", fontWeight: 700, cursor: "pointer",
                     transition: "all 0.15s", whiteSpace: "nowrap",
-                    boxShadow: item.active ? "0 3px 10px rgba(26,26,46,0.2)" : "none",
+                    boxShadow: item.active ? "0 3px 12px rgba(232,100,74,0.35)" : "none",
                   }}
                 >
                   {item.label}
@@ -587,8 +619,8 @@ export default function SearchPageClient() {
             <p style={{ fontSize: "13px", color: "#6B7280" }}>Recherche des hôtels en cours...</p>
           ) : hotels.length > 0 ? (
             <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <p style={{ fontSize: "14px", fontWeight: 700, color: "#1E1E2E", fontFamily: "var(--font-nunito)", margin: 0 }}>
-              <span style={{ color: "#E8644A" }}>{filteredHotels.length}</span>{" "}
+            <p style={{ fontSize: "15px", fontWeight: 700, color: "#1E1E2E", fontFamily: "var(--font-nunito)", margin: 0 }}>
+              <span style={{ color: "#E8644A", fontSize: "20px", fontWeight: 900 }}>{filteredHotels.length}</span>{" "}
               hôtel{filteredHotels.length !== 1 ? "s" : ""}{milestonePct !== null ? ` autour de ${getTimeAtPct(milestonePct)}` : " sur votre route"}
               {filteredHotels.length < hotels.length && (
                 <span style={{ fontSize: "12px", color: "#6B7280", fontWeight: 400 }}>

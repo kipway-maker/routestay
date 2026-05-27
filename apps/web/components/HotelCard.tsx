@@ -35,9 +35,11 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
         overflow: "hidden",
         cursor: "pointer",
         border: selected ? "2px solid #E8644A" : isTight ? "2px solid #F59E0B" : "2px solid transparent",
-        boxShadow: selected ? "0 4px 20px rgba(255,98,64,0.2)" : "0 2px 8px rgba(0,0,0,0.07)",
+        boxShadow: selected
+          ? "0 8px 28px rgba(232,100,74,0.28), 0 2px 8px rgba(0,0,0,0.06)"
+          : "0 2px 8px rgba(0,0,0,0.07)",
         transition: "all 0.18s ease",
-        transform: selected ? "translateY(-2px)" : "none",
+        transform: selected ? "translateY(-2px) scale(1.01)" : "none",
       }}
       onMouseEnter={(e) => {
         if (!selected) (e.currentTarget as HTMLDivElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.13)";
@@ -46,6 +48,14 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
         if (!selected) (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)";
       }}
     >
+      {/* Selected accent bar */}
+      {selected && (
+        <div style={{
+          height: "4px",
+          background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)",
+        }} />
+      )}
+
       {/* Photo */}
       <div style={{ position: "relative", width: "100%", paddingBottom: "66%", background: "#f3f4f6" }}>
         <img
@@ -79,9 +89,12 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
         {hotel.pricePerNight && (
           <div style={{
             position: "absolute", bottom: "8px", right: "8px",
-            background: "rgba(255,255,255,0.95)", borderRadius: "8px",
-            padding: "3px 8px", fontSize: "13px", fontWeight: 700, color: "#1E1E2E",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+            background: selected ? "#E8644A" : "rgba(255,255,255,0.95)",
+            borderRadius: "10px",
+            padding: "4px 10px", fontSize: "13px", fontWeight: 800,
+            color: selected ? "#fff" : "#1E1E2E",
+            boxShadow: selected ? "0 3px 10px rgba(232,100,74,0.45)" : "0 2px 6px rgba(0,0,0,0.12)",
+            transition: "all 0.18s",
           }}>
             {hotel.pricePerNight} €
           </div>
