@@ -276,7 +276,7 @@ export default function SearchPageClient() {
         }}>
           <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-kipway.png" alt="KipWay" style={{ height: "70px", width: "auto", mixBlendMode: "multiply" }} />
+            <img src="/logo-kipway-v2.png" alt="KipWay" style={{ height: "86px", width: "auto", mixBlendMode: "multiply" }} />
           </Link>
 
           <div style={{ flex: 1, minWidth: 0 }}>

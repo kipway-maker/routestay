@@ -27,12 +27,12 @@ export default function HomePage() {
         borderBottom: "1px solid rgba(0,0,0,0.07)",
         borderTop: "3px solid transparent",
         borderImage: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0) 1",
-        padding: "0 32px", height: "100px",
+        padding: "0 32px", height: "120px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-kipway.png" alt="KipWay" style={{ height: "90px", width: "auto", mixBlendMode: "multiply" }} />
+          <img src="/logo-kipway-v2.png" alt="KipWay" style={{ height: "110px", width: "auto", mixBlendMode: "multiply" }} />
         </div>
         <a
           href="#search"
