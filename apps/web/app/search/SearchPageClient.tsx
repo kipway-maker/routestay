@@ -532,21 +532,14 @@ export default function SearchPageClient() {
               </div>
             </div>
 
-            {/* Toggle check-in */}
-            <button
+            {/* Toggle check-in — inline, sans box */}
+            <div
               onClick={() => setUseArrivalCheck((v) => !v)}
               style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                width: "100%", background: useArrivalCheck ? "rgba(232,100,74,0.07)" : "#F8F7F4",
-                border: useArrivalCheck ? "1.5px solid rgba(232,100,74,0.3)" : "1.5px solid #e5e7eb",
-                borderRadius: "14px", padding: "10px 14px",
-                cursor: "pointer", marginBottom: "10px",
-                transition: "all 0.2s",
+                display: "flex", alignItems: "center", gap: "10px",
+                marginBottom: "10px", cursor: "pointer",
               }}
             >
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#1E1E2E", display: "flex", alignItems: "center", gap: "8px" }}>
-                🔔 Prendre en compte l'heure des check-in
-              </span>
               {/* Toggle pill */}
               <div style={{
                 width: "42px", height: "24px", borderRadius: "12px",
@@ -563,7 +556,10 @@ export default function SearchPageClient() {
                   transition: "left 0.2s",
                 }} />
               </div>
-            </button>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#1E1E2E", userSelect: "none" }}>
+                Prendre en compte l'heure des check-in
+              </span>
+            </div>
 
             {/* Filtres rapides */}
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>

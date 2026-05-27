@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Hotel } from "@/lib/amadeus";
@@ -21,9 +21,10 @@ function createPriceHTML(price: number | null, selected: boolean) {
     white-space: nowrap;
     box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     border: 2px solid #fff;
-    transform: ${selected ? "scale(1.1)" : "scale(1)"};
+    transform: ${selected ? "scale(1.15)" : "scale(1)"};
     font-family: system-ui, sans-serif;
     cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
   ">${label}</div>`;
 }
 
@@ -43,6 +44,13 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
   const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const popupsRef = useRef<Map<string, maplibregl.Popup>>(new Map());
 
+  // Keep callbacks in refs so marker event listeners always call the latest version
+  // without needing to be in the dependency array (avoids marker recreation on every render)
+  const onSelectRef = useRef(onSelectHotel);
+  const onExpandRef = useRef(onExpandHotel);
+  useEffect(() => { onSelectRef.current = onSelectHotel; }, [onSelectHotel]);
+  useEffect(() => { onExpandRef.current = onExpandHotel; }, [onExpandHotel]);
+
   // Init map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -59,7 +67,6 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
     map.on("load", () => {
-      // Route layer
       map.addSource("route", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } } });
       map.addLayer({ id: "route-line", type: "line", source: "route",
         paint: { "line-color": "#E8644A", "line-width": 5, "line-opacity": 0.95 },
@@ -117,21 +124,23 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
     }
   }, [origin, destination]);
 
-  // Hotel markers
+  // ── Hotel markers — only recreated when the hotels LIST changes ──────────────
+  // selectedHotelId is intentionally NOT a dep here: we handle style updates
+  // in a separate effect so open popups are never destroyed by a selection change.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove old markers
+    // Remove previous markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current.clear();
     popupsRef.current.clear();
 
     hotels.forEach((hotel) => {
       const el = document.createElement("div");
-      el.innerHTML = createPriceHTML(hotel.pricePerNight, selectedHotelId === hotel.id);
+      el.innerHTML = createPriceHTML(hotel.pricePerNight, false);
 
-      const popup = new maplibregl.Popup({ offset: 20, maxWidth: "300px" }).setHTML(`
+      const popup = new maplibregl.Popup({ offset: 25, maxWidth: "300px" }).setHTML(`
         <div style="width:260px;font-family:system-ui,sans-serif;padding:8px">
           <div style="width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#f3f4f6">
             <img src="${hotel.imageUrl}" style="width:100%;height:100%;object-fit:cover"
@@ -153,15 +162,32 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
         .setPopup(popup)
         .addTo(map);
 
-      el.addEventListener("click", () => { onSelectHotel(hotel.id); marker.togglePopup(); });
+      // Use refs so the closure never goes stale
+      el.addEventListener("click", () => {
+        onSelectRef.current(hotel.id);
+        if (!marker.getPopup()?.isOpen()) {
+          marker.togglePopup();
+        }
+      });
+
       markersRef.current.set(hotel.id, marker);
       popupsRef.current.set(hotel.id, popup);
     });
 
-    // Global handler for popup button
-    (window as any).__kipwayExpand = (id: string) => onExpandHotel(id);
+    // Global handler for the "Voir →" button inside the popup
+    (window as any).__kipwayExpand = (id: string) => onExpandRef.current(id);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hotels, selectedHotelId]);
+  }, [hotels]);
+
+  // ── Update marker STYLE when selection changes (no recreation) ──────────────
+  useEffect(() => {
+    markersRef.current.forEach((marker, id) => {
+      const el = marker.getElement();
+      const hotel = hotels.find((h) => h.id === id);
+      if (hotel) el.innerHTML = createPriceHTML(hotel.pricePerNight, id === selectedHotelId);
+    });
+  }, [selectedHotelId, hotels]);
 
   // Fly to selected hotel
   useEffect(() => {
