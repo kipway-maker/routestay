@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import SearchBar from "@/components/SearchBar";
 import TutorialRoute from "@/components/home/TutorialRoute";
+import PersonalizationSection from "@/components/home/PersonalizationSection";
 
 interface Place { name: string; lat: number; lng: number; }
 
@@ -125,6 +126,9 @@ export default function HomePage() {
 
       {/* ── TUTORIAL ROUTE ── */}
       <TutorialRoute />
+
+      {/* ── PERSONNALISATION ── */}
+      <PersonalizationSection />
 
       {/* ── CTA FINAL ── */}
       <section style={{
