@@ -82,6 +82,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
               fontSize: "10px", fontWeight: 700,
               padding: "3px 8px", borderRadius: "20px",
               backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
               display: "inline-block",
             }}>🌙 24h</span>
           )}

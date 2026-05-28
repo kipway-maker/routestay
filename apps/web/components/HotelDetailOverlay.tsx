@@ -74,6 +74,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
           background: "rgba(0,0,0,0.35)",
           zIndex: 3000,
           backdropFilter: "blur(2px)",
+          WebkitBackdropFilter: "blur(2px)",
         }}
       />
 

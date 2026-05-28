@@ -251,7 +251,7 @@ export default function SearchPageClient() {
   const activeFilters = activeFilterCount(filters);
 
   return (
-    <div ref={containerRef} style={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden", background: "#F8F7F4" }}>
+    <div ref={containerRef} style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden", background: "#F8F7F4" }}>
 
       {/* ── PANNEAU HÔTELS — gauche ── */}
       <div style={{
@@ -270,10 +270,11 @@ export default function SearchPageClient() {
           borderBottom: "1px solid rgba(0,0,0,0.07)",
           flexShrink: 0,
           display: "flex", alignItems: "center", gap: "12px",
-          boxShadow: "0 2px 0 0 transparent",
-          borderTop: "3px solid transparent",
-          borderImage: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0) 1",
+          position: "relative",
+          isolation: "isolate",
         }}>
+          {/* Gradient top border — avoids border-image / border-radius incompatibility on Windows */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
           <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-kipway-v2.png" alt="KipWay" style={{ height: "106px", width: "auto", mixBlendMode: "multiply" }} />
@@ -444,6 +445,7 @@ export default function SearchPageClient() {
                           padding: "2px 8px", borderRadius: "8px",
                           whiteSpace: "nowrap", letterSpacing: "0.2px",
                           backdropFilter: "blur(4px)",
+                          WebkitBackdropFilter: "blur(4px)",
                           marginBottom: "2px",
                         }}>
                           {hoverCity}
@@ -637,7 +639,7 @@ export default function SearchPageClient() {
         </div>
 
         {/* Grille */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 20px" }}>
+        <div className="scroll-stable" style={{ flex: 1, overflowY: "auto", padding: "0 16px 20px" }}>
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}

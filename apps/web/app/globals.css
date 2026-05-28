@@ -25,6 +25,37 @@
 html, body { height: 100%; }
 /* La page /search gère son propre overflow: hidden via inline style */
 
+/* ── Cross-platform input resets ───────────────────────────────────────────── */
+/* Windows Chrome/Edge renders type=time and type=date with native chrome;
+   this removes the calendar picker icon and forces font inheritance */
+input[type="time"],
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+}
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+input[type="time"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-inner-spin-button {
+  display: none;
+}
+
+/* ── Cross-platform scrollbar ───────────────────────────────────────────────── */
+/* Windows shows 17px-wide scrollbars that shift layout; reserve space consistently */
+.scroll-stable { scrollbar-gutter: stable; }
+
+/* Thin scrollbar on Windows (Chromium-based) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }

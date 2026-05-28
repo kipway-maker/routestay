@@ -22,7 +22,7 @@ function createPriceHTML(price: number | null, selected: boolean) {
     box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     border: 2px solid #fff;
     transform: ${selected ? "scale(1.15)" : "scale(1)"};
-    font-family: system-ui, sans-serif;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     cursor: pointer;
     transition: transform 0.15s, background 0.15s;
   ">${label}</div>`;

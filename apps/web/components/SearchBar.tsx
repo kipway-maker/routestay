@@ -141,7 +141,7 @@ function AddressInput({
           fontWeight: 500,
           color: query ? "#1E1E2E" : "#9ca3af",
           background: "transparent",
-          fontFamily: "var(--font-inter), sans-serif",
+          fontFamily: "var(--font-inter, 'Inter'), sans-serif",
           lineHeight: 1.3,
         }}
       />
@@ -264,7 +264,7 @@ export default function SearchBar({ onSearch, loading, compact = false }: Search
     fontSize: compact ? "13px" : "16px",
     fontWeight: 700,
     cursor: canSearch ? "pointer" : "not-allowed",
-    fontFamily: "var(--font-nunito), sans-serif",
+    fontFamily: "var(--font-nunito, 'Nunito'), sans-serif",
     whiteSpace: "nowrap",
     transition: "all 0.15s",
     letterSpacing: "0.2px",
