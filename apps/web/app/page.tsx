@@ -24,7 +24,6 @@ export default function HomePage() {
       {/* ── HEADER ── */}
       <header style={{
         position: "sticky", top: 0, zIndex: 50,
-        /* isolation ensures mix-blend-mode on logo composites correctly on Windows */
         isolation: "isolate",
         background: "rgba(248,247,244,0.92)",
         backdropFilter: "blur(12px)",
@@ -32,7 +31,6 @@ export default function HomePage() {
         borderBottom: "1px solid rgba(0,0,0,0.07)",
         padding: "0 32px", height: "150px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        position: "relative",
       }}>
         {/* Gradient top border — replaces border-image (incompatible with border-radius cross-platform) */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
