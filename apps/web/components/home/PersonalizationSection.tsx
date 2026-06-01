@@ -108,10 +108,10 @@ function SignpostIllustration() {
 
       {/* ── KipWay Pin — grand, au centre ── */}
       {/* Halo */}
-      <ellipse cx="210" cy="110" rx="60" ry="60" fill="url(#pinGlow)" />
+      <ellipse cx="210" cy="82" rx="60" ry="60" fill="url(#pinGlow)" />
 
       {/* Pin corps */}
-      <g transform="translate(210, 125)" filter="url(#pinShadow)">
+      <g transform="translate(210, 97)" filter="url(#pinShadow)">
         <path
           d="M 0,46 C -5,36 -36,22 -36,-10 A 36,36 0 1,1 36,-10 C 36,22 5,36 0,46 Z"
           fill="#E8644A"
@@ -178,19 +178,6 @@ export default function PersonalizationSection() {
         {/* ── Contenu texte ── */}
         <div style={{ flex: 1, minWidth: "280px" }}>
 
-          {/* Eyebrow */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: "8px",
-            background: "rgba(232,100,74,0.15)",
-            border: "1px solid rgba(232,100,74,0.3)",
-            borderRadius: "20px", padding: "5px 14px",
-            marginBottom: "20px",
-          }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "#E8644A", letterSpacing: "1px", textTransform: "uppercase" }}>
-              Personnalisation
-            </span>
-          </div>
-
           <h2 style={{
             fontFamily: "var(--font-nunito, 'Nunito'), sans-serif",
             fontWeight: 900,
@@ -218,7 +205,7 @@ export default function PersonalizationSection() {
             marginBottom: "36px",
             maxWidth: "480px",
           }}>
-            Chaque voyageur est différent. Filtrez les hôtels selon vos critères exacts — budget, bornes de recharge, heure d'arrivée, détour acceptable. Vous ne verrez que ce qui vous correspond vraiment.
+            Chaque voyageur est différent. Filtrez les hôtels selon vos critères exacts : budget, bornes de recharge, heure d'arrivée, détour acceptable. Vous ne verrez que ce qui vous correspond vraiment.
           </p>
 
           {/* Feature list */}

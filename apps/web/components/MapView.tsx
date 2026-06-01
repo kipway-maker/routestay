@@ -10,7 +10,7 @@ const MAP_STYLE = `https://api.maptiler.com/maps/019e69f3-cd46-753f-a7c4-d592468
 
 function createPriceHTML(price: number | null, selected: boolean) {
   const bg = selected ? "#E8644A" : "#1E1E2E";
-  const label = price ? `${price} €` : "—";
+  const label = price ? `${price} €` : "?";
   return `<div style="
     background: ${bg};
     color: #fff;
@@ -68,8 +68,13 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
 
     map.on("load", () => {
       map.addSource("route", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } } });
+      // Halo blanc derrière la ligne pour la faire ressortir sur toutes les tuiles
+      map.addLayer({ id: "route-line-halo", type: "line", source: "route",
+        paint: { "line-color": "#ffffff", "line-width": 11, "line-opacity": 0.6 },
+        layout: { "line-cap": "round", "line-join": "round" },
+      });
       map.addLayer({ id: "route-line", type: "line", source: "route",
-        paint: { "line-color": "#E8644A", "line-width": 5, "line-opacity": 0.95 },
+        paint: { "line-color": "#E8644A", "line-width": 7, "line-opacity": 1 },
         layout: { "line-cap": "round", "line-join": "round" },
       });
     });
@@ -78,16 +83,25 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
     return () => { map.remove(); mapRef.current = null; };
   }, []);
 
-  // Update route
+  // Update route — fires on data change AND once the style finishes loading
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-    const src = map.getSource("route") as maplibregl.GeoJSONSource | undefined;
-    if (!src) return;
-    src.setData({
-      type: "Feature", properties: {},
-      geometry: { type: "LineString", coordinates: route?.coordinates ?? [] },
-    });
+    if (!map) return;
+
+    function applyRoute() {
+      const src = map!.getSource("route") as maplibregl.GeoJSONSource | undefined;
+      if (!src) return;
+      src.setData({
+        type: "Feature", properties: {},
+        geometry: { type: "LineString", coordinates: route?.coordinates ?? [] },
+      });
+    }
+
+    if (map.isStyleLoaded()) {
+      applyRoute();
+    } else {
+      map.once("load", applyRoute);
+    }
   }, [route]);
 
   // Fit bounds
@@ -131,8 +145,9 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove previous markers
+    // Remove previous markers and popups
     markersRef.current.forEach((m) => m.remove());
+    popupsRef.current.forEach((p) => p.remove());
     markersRef.current.clear();
     popupsRef.current.clear();
 
@@ -140,7 +155,13 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
       const el = document.createElement("div");
       el.innerHTML = createPriceHTML(hotel.pricePerNight, false);
 
-      const popup = new maplibregl.Popup({ offset: 25, maxWidth: "300px" }).setHTML(`
+      const popup = new maplibregl.Popup({
+        offset: [0, -8],
+        maxWidth: "300px",
+        closeOnMove: false,
+        closeButton: true,
+        closeOnClick: false,
+      }).setHTML(`
         <div style="width:260px;font-family:system-ui,sans-serif;padding:8px">
           <div style="width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#f3f4f6">
             <img src="${hotel.imageUrl}" style="width:100%;height:100%;object-fit:cover"
@@ -157,16 +178,26 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
         </div>
       `);
 
+      // Do NOT use marker.setPopup() — we manage the popup lifecycle manually
+      // to avoid conflicts with React's render cycle.
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([hotel.lng, hotel.lat])
-        .setPopup(popup)
         .addTo(map);
 
-      // Use refs so the closure never goes stale
-      el.addEventListener("click", () => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
         onSelectRef.current(hotel.id);
-        if (!marker.getPopup()?.isOpen()) {
-          marker.togglePopup();
+
+        // Close every other open popup
+        popupsRef.current.forEach((p, pid) => {
+          if (pid !== hotel.id && p.isOpen()) p.remove();
+        });
+
+        // Toggle this popup directly — no togglePopup(), no isOpen() race
+        if (popup.isOpen()) {
+          popup.remove();
+        } else {
+          popup.setLngLat([hotel.lng, hotel.lat]).addTo(map);
         }
       });
 

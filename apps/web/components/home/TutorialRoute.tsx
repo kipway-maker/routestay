@@ -2,277 +2,299 @@
 
 const STEPS = [
   {
-    number: "01",
-    emoji: "📍",
-    color: "#FF6240",
-    border: "#FF6240",
-    bg: "rgba(255,98,64,0.08)",
+    number: "01", icon: "📍", color: "#E8644A",
     title: "Entrez votre itinéraire",
-    desc: "Départ et destination — une rue, une ville, un village. L'autocomplete trouve tout.",
+    desc: "Départ et destination : une rue, une ville, un village.",
   },
   {
-    number: "02",
-    emoji: "🗺️",
-    color: "#00B4D8",
-    border: "#00B4D8",
-    bg: "rgba(0,180,216,0.08)",
+    number: "02", icon: "🗺️", color: "#6FA8C0",
     title: "La route s'affiche",
-    desc: "Votre itinéraire est calculé et tracé sur la carte. Tous les hôtels sur le chemin apparaissent.",
+    desc: "Tous les hôtels disponibles sur le chemin apparaissent.",
   },
   {
-    number: "03",
-    emoji: "🎯",
-    color: "#06D6A0",
-    border: "#06D6A0",
-    bg: "rgba(6,214,160,0.08)",
-    title: "Focus & Filtres",
-    desc: "Ajoutez un Focus Point pour zoomer sur une ville d'étape. Filtrez par prix, note ou détour.",
+    number: "03", icon: "🎛️", color: "#E8644A",
+    title: "Filtrez et affinez",
+    desc: "Prix, note, borne EV, détour maximal.",
   },
   {
-    number: "04",
-    emoji: "🏨",
-    color: "#FFD166",
-    border: "#F4B942",
-    bg: "rgba(255,209,102,0.12)",
+    number: "04", icon: "🏨", color: "#6FA8C0",
     title: "Choisissez et réservez",
-    desc: "Cliquez sur un hôtel : photo, prix, km de détour. Réservez en un clic via la plateforme de votre choix.",
+    desc: "Réservez en un clic via la plateforme de votre choix.",
   },
 ];
 
-// Positions des pins dans le viewBox 800×2000
+// Pins — large oscillation gauche / droite
 const PINS = [
-  { x: 180, y: 120 },
-  { x: 580, y: 660 },
-  { x: 200, y: 1200 },
-  { x: 560, y: 1740 },
+  { x: 200, y: 110 },
+  { x: 560, y: 530 },
+  { x: 240, y: 970 },
+  { x: 580, y: 1370 },
 ];
+const cardAligns: ("left" | "right")[] = ["right", "left", "right", "left"];
 
-// Chemin SVG — serpente de gauche à droite avec 2 vraies boucles
-const PATH = `
-  M 180,120
-  C 60,220 720,320 720,440
-  C 720,510 650,440 630,500
-  C 610,560 640,620 580,660
-  C 500,720 60,790 40,920
-  C 20,1050 170,970 185,1060
-  C 195,1130 200,1170 200,1200
-  C 100,1310 740,1400 740,1520
-  C 740,1590 660,1530 645,1600
-  C 630,1660 595,1710 560,1740
+// Loopings réels : chaque segment Bézier a ses points de contrôle
+// alternativement à x=920 (hors droite) et x=-220 (hors gauche).
+// La route sort du viewport, boucle dans l'invisible et RE-CROISE son propre tracé
+// en revenant — le crossing visible dans le viewport crée l'effet looping.
+const ROAD_PATH = `
+  M 200,110
+  C 920,160 -220,460 560,530
+  C -220,600 920,890 240,970
+  C 920,1040 -220,1290 580,1370
+  C 560,1440 540,1460 525,1490
 `;
 
-function MapPin({ x, y, color }: { x: number; y: number; color: string }) {
+// Hôtels positionnés à l'intérieur des boucles / aux croisements visibles
+const HOTELS = [
+  { x: 720, y: 250,  badge: "★ Top noté",        sub: "≥ 4,5 / 5",              color: "#FFD166", side: "left"  as const },
+  { x: 80,  y: 410,  badge: "⚡ Borne EV",        sub: "Rechargez en dormant",    color: "#06D6A0", side: "right" as const },
+  { x: 720, y: 720,  badge: "💶 Budget maîtrisé", sub: "< 60 € / 100 € / 150 €", color: "#E8644A", side: "left"  as const },
+  { x: 80,  y: 1060, badge: "↗ Sans détour",      sub: "≤ 5 min de votre route",  color: "#6FA8C0", side: "right" as const },
+  { x: 720, y: 1220, badge: "🌙 Accueil 24h",     sub: "Arrivée à toute heure",   color: "#A78BFA", side: "left"  as const },
+];
+
+// ── Bâtiment hôtel ───────────────────────────────────────────────
+function HotelBuilding({ x, y, badge, sub, color, side }: typeof HOTELS[0]) {
+  const bw = 136;
+  // Badge toujours vers le centre (left hotel → badge right, right hotel → badge left)
+  const bx = side === "right" ? 46 : -46 - bw;
+  const lineX1 = side === "right" ? 20 : -20;
+  const lineX2 = side === "right" ? 46 : -46;
+
   return (
-    <g transform={`translate(${x},${y})`} style={{ filter: `drop-shadow(0 4px 8px ${color}55)` }}>
-      <path
-        d="M 0,30 C -3,23 -22,14 -22,-6 A 22,22 0 1,1 22,-6 C 22,14 3,23 0,30 Z"
-        fill={color}
-        stroke="white"
-        strokeWidth="3.5"
-        strokeLinejoin="round"
-      />
-      <circle cx="0" cy="-6" r="9" fill="white" />
+    <g transform={`translate(${x},${y})`}>
+      {/* Ombre bâtiment */}
+      <ellipse cx="2" cy="14" rx="22" ry="5" fill="rgba(0,0,0,0.08)" />
+      {/* Corps */}
+      <rect x="-20" y="-50" width="40" height="64" fill="#EDE8DF" rx="3" />
+      {/* Bandeau couleur en toit */}
+      <rect x="-20" y="-50" width="40" height="6" fill={color} rx="2" />
+      {/* Fenêtres 3 étages × 2 colonnes */}
+      {[0, 1, 2].flatMap(row =>
+        [-11, 3].map(col => (
+          <rect key={`w${row}${col}`} x={col} y={-40 + row * 14} width="8" height="8" fill="#AED6F1" rx="1" opacity="0.9" />
+        ))
+      )}
+      {/* Porte */}
+      <rect x="-5" y="-2" width="10" height="16" fill="#9B7B5A" rx="1" />
+      {/* Connecteur pointillé */}
+      <line x1={lineX1} y1="-24" x2={lineX2} y2="-24"
+        stroke="rgba(0,0,0,0.2)" strokeWidth="1.5" strokeDasharray="3,3" />
+      {/* Badge */}
+      <g transform={`translate(${bx},-38)`}>
+        <rect x="0" y="0" width={bw} height="34" rx="9"
+          fill={color}
+          style={{ filter: `drop-shadow(0 3px 8px ${color}44)` }}
+        />
+        <text x={bw / 2} y="12" textAnchor="middle"
+          fontFamily="'Segoe UI', system-ui, sans-serif"
+          fontWeight="800" fontSize="11" fill="white"
+        >{badge}</text>
+        <text x={bw / 2} y="26" textAnchor="middle"
+          fontFamily="'Segoe UI', system-ui, sans-serif"
+          fontSize="9" fill="rgba(255,255,255,0.82)"
+        >{sub}</text>
+      </g>
     </g>
   );
 }
 
-// Card HTML en foreignObject SVG
-function StepCard({ step, x, y, align }: {
-  step: typeof STEPS[0];
-  x: number;
-  y: number;
-  align: "left" | "right";
-}) {
-  const w = 290;
-  const h = 160;
-  const cx = align === "right" ? x + 40 : x - 40 - w;
-
+// ── Pin étape ────────────────────────────────────────────────────
+function MapPin({ x, y, color, icon }: { x: number; y: number; color: string; icon: string }) {
   return (
-    <foreignObject x={cx} y={y - h / 2} width={w} height={h + 20}>
-      <div
-        // @ts-expect-error xmlns needed for foreignObject
-        xmlns="http://www.w3.org/1999/xhtml"
-        style={{
-          background: "#FFFFFF",
-          borderRadius: "18px",
-          padding: "18px 20px",
-          boxShadow: "0 6px 28px rgba(0,0,0,0.1)",
-          border: `2px solid ${step.bg.replace("0.08", "0.3").replace("0.12","0.3")}`,
-          height: `${h}px`,
-          boxSizing: "border-box" as const,
-          display: "flex",
-          flexDirection: "column" as const,
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-          <div style={{
-            width: "38px", height: "38px", borderRadius: "12px",
-            background: step.bg, display: "flex",
-            alignItems: "center", justifyContent: "center",
-            fontSize: "20px", flexShrink: 0,
-          }}>
-            {step.emoji}
-          </div>
-          <span style={{
-            fontFamily: "'Nunito', sans-serif",
-            fontWeight: 900, fontSize: "30px",
-            color: step.color, opacity: 0.2, lineHeight: "1",
-          }}>
-            {step.number}
-          </span>
-        </div>
-        <div style={{
-          fontFamily: "'Nunito', sans-serif",
-          fontWeight: 800, fontSize: "15px",
-          color: "#1A1A2E", marginBottom: "5px",
-        }}>
-          {step.title}
-        </div>
-        <div style={{
-          fontSize: "12.5px", color: "#6B7280", lineHeight: "1.5",
-        }}>
-          {step.desc}
-        </div>
-      </div>
-    </foreignObject>
+    <g transform={`translate(${x},${y})`}>
+      <circle cx="0" cy="-10" r="38" fill={color} opacity="0.14" />
+      <path d="M 0,42 C -5,32 -32,20 -32,-8 A 32,32 0 1,1 32,-8 C 32,20 5,32 0,42 Z"
+        fill={color} stroke="white" strokeWidth="4" strokeLinejoin="round"
+        style={{ filter: `drop-shadow(0 4px 10px ${color}55)` }} />
+      <circle cx="0" cy="-8" r="21" fill="white" />
+      <text x="0" y="2" textAnchor="middle" fontSize="16" dominantBaseline="middle">{icon}</text>
+    </g>
   );
 }
 
-// Petit connecteur trait entre pin et card
-function Connector({ pinX, pinY, cardAlign }: { pinX: number; pinY: number; cardAlign: "left" | "right" }) {
-  const endX = cardAlign === "right" ? pinX + 40 : pinX - 40;
+// ── Card étape — SVG natif (pas de foreignObject) ────────────────
+function StepCard({ step, x, y, align }: { step: typeof STEPS[0]; x: number; y: number; align: "left" | "right" }) {
+  const w = 190;
+  const h = 88;
+  const cx = align === "right" ? x + 46 : x - 46 - w;
+  const cy = y - h / 2;
+  // Découpe la description en 2 lignes max
+  const words = step.desc.split(" ");
+  let line1 = "", line2 = "";
+  for (const word of words) {
+    if ((line1 + " " + word).trim().length <= 32) line1 = (line1 + " " + word).trim();
+    else line2 = (line2 + " " + word).trim();
+  }
+
   return (
-    <line
-      x1={cardAlign === "right" ? pinX + 22 : pinX - 22}
-      y1={pinY}
-      x2={endX}
-      y2={pinY}
-      stroke="#e5e7eb"
-      strokeWidth="2"
-      strokeDasharray="4,3"
-    />
+    <g>
+      {/* Connecteur */}
+      <line
+        x1={align === "right" ? x + 32 : x - 32} y1={y}
+        x2={align === "right" ? x + 46 : x - 46} y2={y}
+        stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeDasharray="3,3"
+      />
+      {/* Fond card */}
+      <rect x={cx} y={cy} width={w} height={h} rx="14" ry="14"
+        fill="rgba(255,255,255,0.92)"
+        style={{ filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.09))" }}
+      />
+      {/* Numéro */}
+      <text x={cx + 14} y={cy + 28}
+        fontFamily="'Nunito', sans-serif" fontWeight="900" fontSize="22"
+        fill={step.color} opacity="0.22"
+      >{step.number}</text>
+      {/* Titre */}
+      <text x={cx + 44} y={cy + 26}
+        fontFamily="'Nunito', sans-serif" fontWeight="800" fontSize="12.5"
+        fill="#1E1E2E"
+      >{step.title}</text>
+      {/* Description ligne 1 */}
+      <text x={cx + 14} y={cy + 48}
+        fontFamily="'Segoe UI', system-ui, sans-serif" fontSize="10.5"
+        fill="#6B7280"
+      >{line1}</text>
+      {/* Description ligne 2 */}
+      {line2 && (
+        <text x={cx + 14} y={cy + 63}
+          fontFamily="'Segoe UI', system-ui, sans-serif" fontSize="10.5"
+          fill="#6B7280"
+        >{line2}</text>
+      )}
+    </g>
+  );
+}
+
+// ── Décors ───────────────────────────────────────────────────────
+function PineTree({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x},${y}) scale(${s})`}>
+      <polygon points="0,-36 -14,0 14,0" fill="#5A8A5E" />
+      <polygon points="0,-22 -18,10 18,10" fill="#4A7A4E" />
+      <polygon points="0,-8 -21,20 21,20" fill="#3D6B41" />
+      <rect x="-3.5" y="20" width="7" height="11" rx="1.5" fill="#7B5533" />
+    </g>
+  );
+}
+function RoundTree({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x},${y}) scale(${s})`}>
+      <rect x="-3" y="0" width="6" height="14" rx="1" fill="#8B6914" />
+      <circle cx="0" cy="-11" r="18" fill="#5A9A3A" />
+      <circle cx="-6" cy="-16" r="11" fill="#6AAA4A" />
+    </g>
+  );
+}
+function Cloud({ x, y, s = 1, op = 0.85 }: { x: number; y: number; s?: number; op?: number }) {
+  return (
+    <g transform={`translate(${x},${y}) scale(${s})`} opacity={op}>
+      <ellipse cx="0" cy="0" rx="32" ry="18" fill="white" />
+      <ellipse cx="-20" cy="3" rx="18" ry="13" fill="white" />
+      <ellipse cx="20" cy="3" rx="18" ry="13" fill="white" />
+      <ellipse cx="0" cy="-10" rx="20" ry="15" fill="white" />
+    </g>
+  );
+}
+function Birds({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x},${y}) scale(${s})`} opacity={0.38}>
+      <path d="M 0,0 Q 5,-4 10,0" fill="none" stroke="#4A6FA0" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M 13,3 Q 18,-1 23,3" fill="none" stroke="#4A6FA0" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M 5,9 Q 10,5 15,9" fill="none" stroke="#4A6FA0" strokeWidth="1.3" strokeLinecap="round" />
+    </g>
   );
 }
 
 export default function TutorialRoute() {
-  const cardAligns: ("left" | "right")[] = ["right", "left", "right", "left"];
-
   return (
-    <section style={{
-      background: "linear-gradient(180deg, #F8F7F4 0%, #F0F9FF 50%, #F0FFF8 100%)",
-      padding: "80px 0 60px",
-    }}>
+    <section style={{ background: "#D6EEFF", padding: "80px 0 0", overflow: "hidden" }}>
       <div style={{ textAlign: "center", marginBottom: "40px", padding: "0 24px" }}>
         <h2 style={{
           fontFamily: "var(--font-nunito), sans-serif",
           fontWeight: 800, fontSize: "clamp(28px, 3vw, 40px)",
-          color: "#1A1A2E", marginBottom: "12px",
+          color: "#1E1E2E", marginBottom: "12px",
         }}>
           Simple comme bonjour
         </h2>
         <p style={{ fontSize: "16px", color: "#6B7280", maxWidth: "400px", margin: "0 auto" }}>
-          Suivez la route — chaque étape est une action.
+          Suivez la route. Chaque étape est une action.
         </p>
       </div>
 
-      {/* SVG scrollable — full width, tall */}
-      <div style={{ width: "100%", maxWidth: "900px", margin: "0 auto", overflow: "visible" }}>
+      <div style={{ width: "100%", overflow: "hidden" }}>
         <svg
-          viewBox="0 0 800 2000"
-          style={{ width: "100%", height: "auto", display: "block", overflow: "visible" }}
+          viewBox="0 0 800 1540"
+          style={{ width: "100%", height: "auto", display: "block" }}
           preserveAspectRatio="xMidYMid meet"
         >
           <defs>
-            {/* Texture organique */}
-            <filter id="roughen" x="-2%" y="-2%" width="104%" height="104%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="4" seed="8" result="noise" />
-              <feDisplacementMap in="SourceGraphic" in2="noise" scale="5"
-                xChannelSelector="R" yChannelSelector="G" />
-            </filter>
-
-            {/* Pattern texture tressée */}
-            <pattern id="weave" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
-              <rect width="16" height="16" fill="transparent" />
-              <line x1="0" y1="4" x2="16" y2="4" stroke="rgba(255,255,255,0.18)" strokeWidth="3.5" />
-              <line x1="0" y1="12" x2="16" y2="12" stroke="rgba(0,0,0,0.1)" strokeWidth="2" />
-            </pattern>
-
-            <clipPath id="pathClip">
-              <path d={PATH} strokeWidth="40" stroke="white" fill="none" strokeLinecap="round" />
-            </clipPath>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#D6EEFF" />
+              <stop offset="58%" stopColor="#FFE0C8" />
+              <stop offset="100%" stopColor="#FFD4A8" />
+            </linearGradient>
           </defs>
 
-          {/* ── Route — 4 couches ── */}
+          {/* Fond */}
+          <rect x="0" y="0" width="800" height="1540" fill="url(#skyGrad)" />
 
-          {/* Couche 1 : ombre portée */}
-          <path
-            d={PATH} fill="none"
-            stroke="rgba(180,60,30,0.25)"
-            strokeWidth="46"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            filter="url(#roughen)"
-            transform="translate(3,5)"
-          />
+          {/* ── Nuages & oiseaux (fond) ── */}
+          <Cloud x={130} y={52}  s={1.05} op={0.88} />
+          <Cloud x={620} y={36}  s={0.82} op={0.72} />
+          <Cloud x={440} y={76}  s={0.6}  op={0.5}  />
+          <Cloud x={68}  y={440} s={0.7}  op={0.42} />
+          <Cloud x={706} y={500} s={0.85} op={0.48} />
+          <Cloud x={360} y={250} s={0.52} op={0.32} />
+          <Cloud x={150} y={820} s={0.65} op={0.35} />
+          <Cloud x={680} y={940} s={0.72} op={0.38} />
+          <Birds x={510} y={125} s={1.0} />
+          <Birds x={125} y={290} s={0.85} />
+          <Birds x={650} y={660} s={0.9} />
+          <Birds x={100} y={1050} s={0.8} />
 
-          {/* Couche 2 : corps principal brand orange */}
-          <path
-            d={PATH} fill="none"
-            stroke="#FF6240"
-            strokeWidth="38"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            filter="url(#roughen)"
-          />
+          {/* ── Arbres — à l'intérieur des boucles et aux bords ── */}
+          <PineTree  x={340} y={200} s={0.9}  />
+          <RoundTree x={380} y={255} s={0.75} />
+          <PineTree  x={310} y={310} s={0.8}  />
+          <PineTree  x={420} y={360} s={0.72} />
 
-          {/* Couche 3 : texture tressée clippée sur le chemin */}
-          <rect
-            x="0" y="0" width="800" height="2000"
-            fill="url(#weave)"
-            clipPath="url(#pathClip)"
-            filter="url(#roughen)"
-          />
+          <PineTree  x={340} y={660} s={0.88} />
+          <RoundTree x={380} y={720} s={0.78} />
+          <PineTree  x={310} y={780} s={0.82} />
 
-          {/* Couche 4 : reflet highlight (côté gauche du trait) */}
-          <path
-            d={PATH} fill="none"
-            stroke="rgba(255,180,150,0.45)"
-            strokeWidth="16"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="30,60"
-            filter="url(#roughen)"
-          />
+          <PineTree  x={360} y={1100} s={0.85} />
+          <RoundTree x={400} y={1155} s={0.72} />
+          <PineTree  x={330} y={1210} s={0.8}  />
+          <PineTree  x={420} y={1260} s={0.7}  />
 
-          {/* Couche 5 : liseret brillant central */}
-          <path
-            d={PATH} fill="none"
-            stroke="rgba(255,255,255,0.2)"
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {/* ── Route : ombre ── */}
+          <path d={ROAD_PATH} fill="none"
+            stroke="rgba(160,50,20,0.16)" strokeWidth="34"
+            strokeLinecap="round" strokeLinejoin="round"
+            transform="translate(2,5)" />
 
-          {/* ── Connecteurs pin → card ── */}
+          {/* ── Route : corps (plus fine) ── */}
+          <path d={ROAD_PATH} fill="none"
+            stroke="#E8644A" strokeWidth="28"
+            strokeLinecap="round" strokeLinejoin="round" />
+
+          {/* ── Route : tirets blancs ── */}
+          <path d={ROAD_PATH} fill="none"
+            stroke="white" strokeWidth="2.5"
+            strokeLinecap="round" strokeDasharray="20,15" opacity="0.82" />
+
+          {/* ── Hôtels avec badges (dessinés APRÈS la route = au-dessus) ── */}
+          {HOTELS.map((h, i) => <HotelBuilding key={i} {...h} />)}
+
+          {/* ── Cards étapes (au-dessus de tout) ── */}
           {PINS.map((pin, i) => (
-            <Connector key={i} pinX={pin.x} pinY={pin.y} cardAlign={cardAligns[i]} />
+            <StepCard key={i} step={STEPS[i]} x={pin.x} y={pin.y} align={cardAligns[i]} />
           ))}
 
-          {/* ── Pins ── */}
+          {/* ── Pins (tout en haut) ── */}
           {PINS.map((pin, i) => (
-            <MapPin key={i} x={pin.x} y={pin.y} color={STEPS[i].color} />
-          ))}
-
-          {/* ── Cards ── */}
-          {PINS.map((pin, i) => (
-            <StepCard
-              key={i}
-              step={STEPS[i]}
-              x={pin.x}
-              y={pin.y}
-              align={cardAligns[i]}
-            />
+            <MapPin key={i} x={pin.x} y={pin.y} color={STEPS[i].color} icon={STEPS[i].icon} />
           ))}
         </svg>
       </div>
