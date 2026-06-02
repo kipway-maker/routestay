@@ -470,6 +470,25 @@ export default function SearchPageClient() {
                   <span style={{ fontSize: "10px", fontWeight: 600, color: "#9ca3af", letterSpacing: "0.5px" }}>arrivée estimée</span>
                 </div>
               </div>
+
+              {/* Retirer le repère — juste sous le rail, dans la card */}
+              {milestonePct !== null && (
+                <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
+                  <button
+                    onClick={() => setMilestonePct(null)}
+                    style={{
+                      fontSize: "11px", fontWeight: 700,
+                      color: "#E8644A",
+                      background: "rgba(255,98,64,0.07)",
+                      border: "1px solid rgba(255,98,64,0.18)",
+                      borderRadius: "20px", padding: "4px 14px",
+                      cursor: "pointer", letterSpacing: "0.2px",
+                    }}
+                  >
+                    ✕ Retirer le repère
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Toggle check-in — inline, sans box */}
@@ -564,14 +583,6 @@ export default function SearchPageClient() {
                 </span>
               )}
             </p>
-            {milestonePct !== null && (
-              <button
-                onClick={() => setMilestonePct(null)}
-                style={{ fontSize: "11px", fontWeight: 700, color: "#E8644A", background: "rgba(255,98,64,0.08)", border: "1px solid rgba(255,98,64,0.2)", borderRadius: "20px", padding: "3px 10px", cursor: "pointer" }}
-              >
-                ✕ Retirer le repère
-              </button>
-            )}
             </div>
           ) : null}
         </div>
