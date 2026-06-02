@@ -24,11 +24,13 @@ function FocusCard({
         flexShrink: 0,
         width: "220px",
         scrollSnapAlign: "start",
-        background: "#FFFFFF",
+        background: "rgba(255,255,255,0.55)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: selected ? "2px solid #FF6240" : "1px solid rgba(255,255,255,0.6)",
         borderRadius: "18px",
         overflow: "hidden",
         cursor: "pointer",
-        border: selected ? "2px solid #FF6240" : "2px solid transparent",
         boxShadow: selected ? "0 6px 24px rgba(255,98,64,0.18)" : "0 2px 12px rgba(0,0,0,0.08)",
         transition: "all 0.18s ease",
         transform: selected ? "translateY(-3px)" : "none",
@@ -243,7 +245,7 @@ export default function FocusPointBand({ hotels, selectedHotelId, onSelectHotel 
           <div style={{ padding: "0 20px 16px", position: "relative" }}>
             <div style={{
               display: "flex", alignItems: "center", gap: "10px",
-              background: "#FFFFFF",
+              background: "rgba(255,255,255,0.55)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
               border: inputFocused ? "1.5px solid #FF6240" : "1.5px solid #e5e7eb",
               borderRadius: "14px",
               padding: "11px 16px",
@@ -287,7 +289,7 @@ export default function FocusPointBand({ hotels, selectedHotelId, onSelectHotel 
             {open && suggestions.length > 0 && (
               <div ref={dropdownRef} style={{
                 position: "absolute", top: "calc(100% - 4px)", left: "20px", right: "20px",
-                background: "#FFFFFF", borderRadius: "14px",
+                background: "rgba(255,255,255,0.55)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: "14px",
                 boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                 zIndex: 500, overflow: "hidden",
                 border: "1px solid rgba(0,0,0,0.06)",
@@ -329,7 +331,7 @@ export default function FocusPointBand({ hotels, selectedHotelId, onSelectHotel 
                 style={{
                   position: "absolute", left: "8px", top: "50%", transform: "translateY(-50%)",
                   zIndex: 10, width: "36px", height: "36px", borderRadius: "50%",
-                  border: "1.5px solid #e5e7eb", background: "#FFFFFF", cursor: "pointer",
+                  border: "1.5px solid #e5e7eb", background: "rgba(255,255,255,0.55)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", cursor: "pointer",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "16px", color: "#1A1A2E", transition: "all 0.15s",
@@ -369,7 +371,7 @@ export default function FocusPointBand({ hotels, selectedHotelId, onSelectHotel 
                 style={{
                   position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)",
                   zIndex: 10, width: "36px", height: "36px", borderRadius: "50%",
-                  border: "1.5px solid #e5e7eb", background: "#FFFFFF", cursor: "pointer",
+                  border: "1.5px solid #e5e7eb", background: "rgba(255,255,255,0.55)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", cursor: "pointer",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "16px", color: "#1A1A2E", transition: "all 0.15s",

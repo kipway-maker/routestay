@@ -254,30 +254,10 @@ export default function SearchPageClient() {
   return (
     <div ref={containerRef} style={{
       display: "flex", height: "100vh", width: "100%", overflow: "hidden",
-      background: "linear-gradient(135deg, #F5C6FF 0%, #FFB5C8 18%, #FFD4A8 35%, #C8E8FF 55%, #D4C0FF 75%, #FFB5D8 100%)",
+      background: "#F8F7F4",
       position: "relative",
     }}>
 
-      {/* ── ORBES DE FOND ── */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        {[
-          { x: "5%",  y: "10%", s: 500, c: "#FF6EB4", o: 0.55 },
-          { x: "80%", y: "5%",  s: 420, c: "#7B61FF", o: 0.50 },
-          { x: "45%", y: "40%", s: 380, c: "#FF9A3E", o: 0.40 },
-          { x: "15%", y: "70%", s: 440, c: "#00D4FF", o: 0.42 },
-          { x: "88%", y: "65%", s: 360, c: "#FF4D9E", o: 0.45 },
-          { x: "60%", y: "88%", s: 300, c: "#A855F7", o: 0.38 },
-          { x: "35%", y: "15%", s: 260, c: "#FFA500", o: 0.35 },
-        ].map((o, i) => (
-          <div key={i} style={{
-            position: "absolute", left: o.x, top: o.y,
-            width: o.s, height: o.s, borderRadius: "50%",
-            background: o.c, opacity: o.o,
-            filter: `blur(${o.s * 0.5}px)`,
-            transform: "translate(-50%, -50%)",
-          }} />
-        ))}
-      </div>
 
       {/* ── PANNEAU HÔTELS — gauche ── */}
       <div style={{
@@ -293,15 +273,12 @@ export default function SearchPageClient() {
         {/* Header : logo + search + filtres */}
         <div style={{
           padding: "8px 20px",
-          background: "rgba(255,255,255,0.18)",
-          backdropFilter: "blur(40px)",
-          WebkitBackdropFilter: "blur(40px)",
-          borderBottom: "1px solid rgba(255,255,255,0.35)",
+          background: "#FFFFFF",
+          borderBottom: "1px solid rgba(0,0,0,0.07)",
           flexShrink: 0,
           display: "flex", alignItems: "center", gap: "12px",
           position: "relative",
           isolation: "isolate",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
         }}>
           {/* Gradient top border — avoids border-image / border-radius incompatibility on Windows */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
@@ -355,10 +332,10 @@ export default function SearchPageClient() {
         {routeDurationMin > 0 && (
           <div style={{
             padding: "16px 20px 14px",
-            background: "rgba(255,255,255,0.15)",
-            backdropFilter: "blur(32px)",
-            WebkitBackdropFilter: "blur(32px)",
-            borderBottom: "1px solid rgba(255,255,255,0.3)",
+            background: "rgba(255,255,255,0.75)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
             flexShrink: 0,
           }}>
             {/* ── Timeline départ → durée → arrivée ── */}
@@ -522,12 +499,19 @@ export default function SearchPageClient() {
 
             </div>
 
-            {/* Toggle check-in — inline, sans box */}
+            {/* Toggle check-in */}
             <div
               onClick={() => setUseArrivalCheck((v) => !v)}
               style={{
-                display: "flex", alignItems: "center", gap: "10px",
+                display: "inline-flex", alignItems: "center", gap: "10px",
                 marginBottom: "10px", cursor: "pointer",
+                background: "rgba(255,255,255,0.55)",
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                border: "1px solid rgba(255,255,255,0.6)",
+                borderRadius: "50px",
+                padding: "6px 14px 6px 8px",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
               }}
             >
               {/* Toggle pill */}
@@ -572,14 +556,14 @@ export default function SearchPageClient() {
                   onClick={item.toggle}
                   style={{
                     padding: "8px 16px", borderRadius: "24px",
-                    border: item.active ? "2px solid #E8644A" : "1.5px solid #e5e7eb",
-                    background: item.active ? "#E8644A" : "rgba(255,255,255,0.55)",
-                    backdropFilter: item.active ? "none" : "blur(8px)",
-                    WebkitBackdropFilter: item.active ? "none" : "blur(8px)",
+                    border: item.active ? "1.5px solid #E8644A" : "1px solid rgba(255,255,255,0.65)",
+                    background: item.active ? "#E8644A" : "rgba(255,255,255,0.50)",
+                    backdropFilter: "blur(16px)",
+                    WebkitBackdropFilter: "blur(16px)",
                     color: item.active ? "#FFFFFF" : "#374151",
                     fontSize: "13px", fontWeight: 700, cursor: "pointer",
                     transition: "all 0.15s", whiteSpace: "nowrap",
-                    boxShadow: item.active ? "0 3px 12px rgba(232,100,74,0.35)" : "none",
+                    boxShadow: item.active ? "0 3px 12px rgba(232,100,74,0.35)" : "inset 0 1px 0 rgba(255,255,255,0.8)",
                   }}
                 >
                   {item.label}

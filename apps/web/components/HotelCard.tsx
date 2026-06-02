@@ -55,7 +55,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
     const r = cardRef.current!.getBoundingClientRect();
     const mx = e.clientX - r.left, my = e.clientY - r.top;
     const cx = r.width / 2,       cy = r.height / 2;
-    setTilt({ x: -((my - cy) / cy) * 7, y: ((mx - cx) / cx) * 9 });
+    setTilt({ x: -((my - cy) / cy) * 4, y: ((mx - cx) / cx) * 5 });
     setSpot({ x: (mx / r.width) * 100, y: (my / r.height) * 100, on: true });
   }, []);
 
