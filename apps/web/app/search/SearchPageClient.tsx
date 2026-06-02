@@ -429,8 +429,8 @@ export default function SearchPageClient() {
                       <path d="M1 5H9M9 5L5.5 1.5M9 5L5.5 8.5" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
 
-                    {/* Hover : voiture */}
-                    {hoverPct !== null && (
+                    {/* Hover : voiture — masqué quand on survole le pin repère */}
+                    {hoverPct !== null && !milestoneHovered && (
                       <div style={{ position: "absolute", left: `${hoverPct}%`, transform: "translateX(-50%)", pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", transition: "left 0.04s linear" }}>
                         {hoverCity && (
                           <div style={{ background: "rgba(26,26,46,0.75)", color: "#fff", fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: "8px", whiteSpace: "nowrap", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", marginBottom: "2px" }}>
