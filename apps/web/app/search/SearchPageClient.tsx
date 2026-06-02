@@ -690,7 +690,7 @@ export default function SearchPageClient() {
                     <HotelCard
                       hotel={hotel}
                       selected={selectedHotel === hotel.id}
-                      onSelect={toggleHotel}
+                      onSelect={(id) => { toggleHotel(id); setExpandedHotelId(id); }}
                       estimatedArrival={useArrivalCheck ? getArrival(hotel) : null}
                     />
                   </div>

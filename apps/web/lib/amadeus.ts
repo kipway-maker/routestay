@@ -32,6 +32,7 @@ export interface Hotel {
   source: "amadeus" | "mock";
   bookingUrl?: string;
   images: string[]; // carousel
+  address?: string;  // ex: "12 rue de la Paix"
 }
 
 export async function searchHotelsAlongRoute(

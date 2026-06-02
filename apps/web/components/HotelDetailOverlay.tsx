@@ -216,8 +216,8 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
           }}>
             {hotel.name}
           </div>
-          <div style={{ fontSize: "14px", color: "#6B7280", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <span>📍 {hotel.city}</span>
+          <div style={{ fontSize: "14px", color: "#6B7280", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span>📍 {[hotel.address, hotel.city].filter(Boolean).join(", ")}</span>
             {hotel.rating && (
               <span style={{
                 background: "#FFF8E1", borderRadius: "8px",
