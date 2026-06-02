@@ -115,6 +115,7 @@ export default function SearchPageClient() {
   const [milestonePct, setMilestonePct] = useState<number | null>(null);
   const [hoverPct, setHoverPct] = useState<number | null>(null);
   const [hoverCity, setHoverCity] = useState<string | null>(null);
+  const [milestoneHovered, setMilestoneHovered] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
   const reverseDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cityCache = useRef<Map<string, string>>(new Map());
@@ -444,14 +445,27 @@ export default function SearchPageClient() {
                       </div>
                     )}
 
-                    {/* Repère posé */}
+                    {/* Repère posé — hover → "Retirer le repère" */}
                     {milestonePct !== null && (
-                      <div style={{ position: "absolute", left: `${milestonePct}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                        <div style={{ background: "#E8644A", color: "#fff", fontSize: "11px", fontWeight: 800, padding: "4px 10px", borderRadius: "10px", whiteSpace: "nowrap", boxShadow: "0 3px 12px rgba(255,98,64,0.45)", fontFamily: "var(--font-nunito), sans-serif", marginBottom: "2px" }}>
-                          {getTimeAtPct(milestonePct)}
+                      <div
+                        style={{ position: "absolute", left: `${milestonePct}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", zIndex: 10 }}
+                        onMouseEnter={() => setMilestoneHovered(true)}
+                        onMouseLeave={() => setMilestoneHovered(false)}
+                        onClick={(e) => { e.stopPropagation(); setMilestonePct(null); setMilestoneHovered(false); }}
+                      >
+                        {/* Bulle heure → "Retirer" au hover */}
+                        <div style={{
+                          background: milestoneHovered ? "#1E1E2E" : "#E8644A",
+                          color: "#fff", fontSize: "11px", fontWeight: 800,
+                          padding: "4px 10px", borderRadius: "10px", whiteSpace: "nowrap",
+                          boxShadow: milestoneHovered ? "0 3px 12px rgba(0,0,0,0.25)" : "0 3px 12px rgba(255,98,64,0.45)",
+                          fontFamily: "var(--font-nunito), sans-serif", marginBottom: "2px",
+                          transition: "background 0.15s, box-shadow 0.15s",
+                        }}>
+                          {milestoneHovered ? "✕ Retirer" : getTimeAtPct(milestonePct)}
                         </div>
-                        <div style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "6px solid #E8644A", marginBottom: "1px" }} />
-                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#E8644A", border: "2px solid #fff", boxShadow: "0 0 0 3px rgba(255,98,64,0.25)" }} />
+                        <div style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `6px solid ${milestoneHovered ? "#1E1E2E" : "#E8644A"}`, marginBottom: "1px", transition: "border-top-color 0.15s" }} />
+                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: milestoneHovered ? "#1E1E2E" : "#E8644A", border: "2px solid #fff", boxShadow: "0 0 0 3px rgba(255,98,64,0.25)", transition: "background 0.15s" }} />
                       </div>
                     )}
                   </div>
@@ -471,24 +485,6 @@ export default function SearchPageClient() {
                 </div>
               </div>
 
-              {/* Retirer le repère — juste sous le rail, dans la card */}
-              {milestonePct !== null && (
-                <div style={{ marginTop: "10px", display: "flex", justifyContent: "center" }}>
-                  <button
-                    onClick={() => setMilestonePct(null)}
-                    style={{
-                      fontSize: "11px", fontWeight: 700,
-                      color: "#E8644A",
-                      background: "rgba(255,98,64,0.07)",
-                      border: "1px solid rgba(255,98,64,0.18)",
-                      borderRadius: "20px", padding: "4px 14px",
-                      cursor: "pointer", letterSpacing: "0.2px",
-                    }}
-                  >
-                    ✕ Retirer le repère
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Toggle check-in — inline, sans box */}
