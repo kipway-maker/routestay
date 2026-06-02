@@ -1,12 +1,13 @@
 "use client";
 
+import { useRef, useState, useCallback } from "react";
 import { Hotel } from "@/lib/amadeus";
 
 interface HotelCardProps {
   hotel: Hotel;
   selected: boolean;
   onSelect: (id: string) => void;
-  estimatedArrival?: string | null; // "HH:MM"
+  estimatedArrival?: string | null;
 }
 
 function timeToMin(t: string): number {
@@ -14,64 +15,101 @@ function timeToMin(t: string): number {
   return h * 60 + m;
 }
 
+// ── Glass pill générique ───────────────────────────────────────
+function GlassPill({
+  children, color = "rgba(255,255,255,0.25)", border = "rgba(255,255,255,0.5)",
+  textColor = "#1E1E2E",
+}: {
+  children: React.ReactNode;
+  color?: string;
+  border?: string;
+  textColor?: string;
+}) {
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: "4px",
+      background: color,
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      border: `1px solid ${border}`,
+      borderRadius: "50px",
+      padding: "3px 10px",
+      fontSize: "11px", fontWeight: 700, color: textColor,
+      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+      whiteSpace: "nowrap",
+    }}>
+      {children}
+    </span>
+  );
+}
+
 export default function HotelCard({ hotel, selected, onSelect, estimatedArrival }: HotelCardProps) {
-  const isLate = !!(
-    estimatedArrival &&
-    hotel.checkinDeadline &&
-    timeToMin(estimatedArrival) > timeToMin(hotel.checkinDeadline)
-  );
-  const isTight = !isLate && !!(
-    estimatedArrival &&
-    hotel.checkinDeadline &&
-    timeToMin(hotel.checkinDeadline) - timeToMin(estimatedArrival) <= 60
-  );
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [spot, setSpot] = useState({ x: 50, y: 50, on: false });
+
+  const isLate  = !!(estimatedArrival && hotel.checkinDeadline && timeToMin(estimatedArrival) > timeToMin(hotel.checkinDeadline));
+  const isTight = !isLate && !!(estimatedArrival && hotel.checkinDeadline && timeToMin(hotel.checkinDeadline) - timeToMin(estimatedArrival) <= 60);
+
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const r = cardRef.current!.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    const cx = r.width / 2,       cy = r.height / 2;
+    setTilt({ x: -((my - cy) / cy) * 7, y: ((mx - cx) / cx) * 9 });
+    setSpot({ x: (mx / r.width) * 100, y: (my / r.height) * 100, on: true });
+  }, []);
+
+  const onLeave = useCallback(() => {
+    setTilt({ x: 0, y: 0 });
+    setSpot({ x: 50, y: 50, on: false });
+  }, []);
 
   return (
     <div
+      ref={cardRef}
       onClick={() => onSelect(hotel.id)}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
       style={{
-        background: "rgba(255,255,255,0.22)",
-        backdropFilter: "blur(32px)",
-        WebkitBackdropFilter: "blur(32px)",
-        borderRadius: "16px",
+        position: "relative",
+        background: "rgba(255,255,255,0.18)",
+        backdropFilter: "blur(36px)",
+        WebkitBackdropFilter: "blur(36px)",
+        borderRadius: "18px",
         overflow: "hidden",
         cursor: "pointer",
-        border: selected ? "1.5px solid rgba(232,100,74,0.8)" : isTight ? "1.5px solid rgba(245,158,11,0.7)" : "1px solid rgba(255,255,255,0.45)",
+        border: selected
+          ? "1.5px solid rgba(232,100,74,0.7)"
+          : isTight
+          ? "1.5px solid rgba(245,158,11,0.6)"
+          : "1px solid rgba(255,255,255,0.38)",
         boxShadow: selected
-          ? "0 12px 40px rgba(232,100,74,0.35), 0 4px 12px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)"
-          : "0 4px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)",
-        transition: "all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
-        transform: selected ? "translateY(-4px) scale(1.02)" : "none",
-      }}
-      onMouseEnter={(e) => {
-        if (!selected) {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.transform = "translateY(-6px) scale(1.02)";
-          el.style.background = "rgba(255,255,255,0.38)";
-          el.style.boxShadow = "0 20px 60px rgba(120,80,200,0.2), 0 8px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)";
-          el.style.border = "1px solid rgba(255,255,255,0.75)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!selected) {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.transform = "none";
-          el.style.background = "rgba(255,255,255,0.22)";
-          el.style.boxShadow = "0 4px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)";
-          el.style.border = "1px solid rgba(255,255,255,0.45)";
-        }
+          ? "0 16px 48px rgba(232,100,74,0.30), inset 0 1px 0 rgba(255,255,255,0.5)"
+          : "0 4px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.45)",
+        transform: selected
+          ? `perspective(900px) rotateX(${tilt.x * 0.5}deg) rotateY(${tilt.y * 0.5}deg) translateY(-4px) scale(1.02)`
+          : `perspective(900px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+        transition: spot.on ? "box-shadow 0.15s, border 0.15s" : "all 0.35s cubic-bezier(0.23,1,0.32,1)",
+        willChange: "transform",
       }}
     >
-      {/* Selected accent bar */}
+      {/* ── Spotlight qui suit le curseur ── */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 2,
+        pointerEvents: "none", borderRadius: "18px",
+        background: spot.on
+          ? `radial-gradient(circle at ${spot.x}% ${spot.y}%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 45%, transparent 70%)`
+          : "none",
+        transition: "background 0.08s",
+      }} />
+
+      {/* ── Barre sélection ── */}
       {selected && (
-        <div style={{
-          height: "4px",
-          background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)",
-        }} />
+        <div style={{ height: "3px", background: "linear-gradient(90deg,#E8644A,#F09070,#6FA8C0)", position: "relative", zIndex: 3 }} />
       )}
 
-      {/* Photo */}
-      <div style={{ position: "relative", width: "100%", paddingBottom: "66%", background: "#f3f4f6" }}>
+      {/* ── Photo ── */}
+      <div style={{ position: "relative", width: "100%", paddingBottom: "60%" }}>
         <img
           src={hotel.imageUrl}
           alt={hotel.name}
@@ -79,90 +117,100 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
           loading="lazy"
           onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
         />
-        {/* Badges photo — empilés verticalement à gauche */}
-        <div style={{ position: "absolute", top: "8px", left: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+        {/* Overlay gradient bas */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "60%", background: "linear-gradient(to top, rgba(0,0,0,0.45), transparent)", pointerEvents: "none" }} />
+
+        {/* Badges haut-gauche */}
+        <div style={{ position: "absolute", top: "8px", left: "8px", display: "flex", flexDirection: "column", gap: "4px", zIndex: 1 }}>
           {hotel.hasEVCharger && (
-            <span style={{
-              background: "#06D6A0", color: "#fff",
-              fontSize: "10px", fontWeight: 700,
-              padding: "3px 8px", borderRadius: "20px",
-              boxShadow: "0 2px 6px rgba(6,214,160,0.4)",
-              display: "inline-block",
-            }}>⚡ EV</span>
+            <GlassPill color="rgba(6,214,160,0.30)" border="rgba(6,214,160,0.5)" textColor="#00A878">
+              ⚡ EV
+            </GlassPill>
           )}
           {!hotel.checkinDeadline && (
-            <span style={{
-              background: "rgba(26,26,46,0.75)", color: "#fff",
-              fontSize: "10px", fontWeight: 700,
-              padding: "3px 8px", borderRadius: "20px",
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
-              display: "inline-block",
-            }}>🌙 24h</span>
+            <GlassPill color="rgba(30,30,46,0.45)" border="rgba(255,255,255,0.3)" textColor="#fff">
+              🌙 24h
+            </GlassPill>
           )}
         </div>
+
+        {/* Prix bas-droit sur photo */}
         {hotel.pricePerNight && (
           <div style={{
-            position: "absolute", bottom: "8px", right: "8px",
-            background: selected ? "#E8644A" : "rgba(255,255,255,0.95)",
-            borderRadius: "10px",
-            padding: "4px 10px", fontSize: "13px", fontWeight: 800,
-            color: selected ? "#fff" : "#1E1E2E",
-            boxShadow: selected ? "0 3px 10px rgba(232,100,74,0.45)" : "0 2px 6px rgba(0,0,0,0.12)",
-            transition: "all 0.18s",
+            position: "absolute", bottom: "10px", right: "10px", zIndex: 1,
+            background: selected ? "rgba(232,100,74,0.88)" : "rgba(255,255,255,0.22)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: selected ? "1px solid rgba(232,100,74,0.6)" : "1px solid rgba(255,255,255,0.55)",
+            borderRadius: "12px",
+            padding: "5px 12px",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
           }}>
-            {hotel.pricePerNight} €
+            <span style={{ fontSize: "14px", fontWeight: 900, color: selected ? "#fff" : "#fff", letterSpacing: "-0.3px" }}>
+              {hotel.pricePerNight} €
+            </span>
           </div>
         )}
       </div>
 
-      {/* Infos */}
-      <div style={{ padding: "11px 13px 13px" }}>
+      {/* ── Infos ── */}
+      <div style={{ padding: "12px 13px 14px", position: "relative", zIndex: 1 }}>
+
+        {/* Nom */}
         <div style={{
-          fontSize: "14px", fontWeight: 700, color: "#1E1E2E",
-          marginBottom: "2px", whiteSpace: "nowrap",
+          fontSize: "14px", fontWeight: 800, color: "#1E1E2E",
+          marginBottom: "3px", whiteSpace: "nowrap",
           overflow: "hidden", textOverflow: "ellipsis",
           fontFamily: "var(--font-nunito), sans-serif",
         }}>
           {hotel.name}
         </div>
-        <div style={{ fontSize: "12px", color: "#6B7280", marginBottom: "8px" }}>
-          {hotel.city}
-          {hotel.rating && (
-            <span style={{ marginLeft: "8px" }}>
-              ★ <strong style={{ color: "#1E1E2E" }}>{hotel.rating}</strong>
-            </span>
-          )}
-        </div>
 
-        {/* Détour en temps */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "7px", flexWrap: "wrap" }}>
-          <span style={{
-            fontSize: "12px", color: "#6FA8C0", fontWeight: 700,
-            background: "rgba(0,180,216,0.08)", padding: "3px 9px", borderRadius: "20px",
-          }}>
-            {hotel.detourMinutes === 0 ? "Sur la route" : `+${hotel.detourMinutes} min`}
+        {/* Ville + note */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+          <span style={{ fontSize: "11px", color: "rgba(30,30,46,0.55)", fontWeight: 500 }}>
+            📍 {hotel.city}
           </span>
-          {hotel.hasEVCharger && (
-            <span style={{
-              fontSize: "11px", color: "#06D6A0", fontWeight: 600,
-              background: "rgba(6,214,160,0.08)", padding: "3px 8px", borderRadius: "20px",
-            }}>
-              +20 min recharge EV
-            </span>
+          {hotel.rating && (
+            <GlassPill color="rgba(255,209,102,0.22)" border="rgba(255,209,102,0.45)" textColor="#A07000">
+              ★ {hotel.rating}
+            </GlassPill>
           )}
         </div>
 
-        {/* Check-in info */}
+        {/* Badges détour + EV */}
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "8px" }}>
+          <GlassPill color="rgba(111,168,192,0.20)" border="rgba(111,168,192,0.45)" textColor="#2A7090">
+            {hotel.detourMinutes === 0 ? "🛣 Sur la route" : `↗ +${hotel.detourMinutes} min`}
+          </GlassPill>
+          {hotel.hasEVCharger && (
+            <GlassPill color="rgba(6,214,160,0.15)" border="rgba(6,214,160,0.35)" textColor="#008060">
+              ⚡ +20 min recharge
+            </GlassPill>
+          )}
+        </div>
+
+        {/* Check-in */}
         {hotel.checkinDeadline && (
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            background: isLate ? "rgba(239,68,68,0.06)" : isTight ? "rgba(245,158,11,0.08)" : "rgba(0,0,0,0.03)",
-            borderRadius: "8px", padding: "5px 9px",
-            border: isLate ? "1px solid rgba(239,68,68,0.2)" : isTight ? "1px solid rgba(245,158,11,0.25)" : "1px solid transparent",
+            background: isLate
+              ? "rgba(239,68,68,0.12)"
+              : isTight
+              ? "rgba(245,158,11,0.12)"
+              : "rgba(255,255,255,0.20)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: isLate
+              ? "1px solid rgba(239,68,68,0.30)"
+              : isTight
+              ? "1px solid rgba(245,158,11,0.30)"
+              : "1px solid rgba(255,255,255,0.40)",
+            borderRadius: "10px", padding: "5px 10px",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
           }}>
-            <span style={{ fontSize: "11px", color: "#6B7280" }}>
-              Check-in max&nbsp;<strong style={{ color: "#1E1E2E" }}>{hotel.checkinDeadline}</strong>
+            <span style={{ fontSize: "11px", color: "rgba(30,30,46,0.6)" }}>
+              Check-in max <strong style={{ color: "#1E1E2E" }}>{hotel.checkinDeadline}</strong>
             </span>
             {estimatedArrival && (
               <span style={{
@@ -175,11 +223,14 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
           </div>
         )}
 
-        {/* Prix */}
+        {/* Prix texte bas */}
         {hotel.pricePerNight && (
-          <div style={{ marginTop: "8px", fontSize: "13px", color: "#1E1E2E" }}>
-            <span style={{ fontWeight: 700 }}>{hotel.pricePerNight} €</span>
-            <span style={{ color: "#6B7280" }}> / nuit</span>
+          <div style={{ marginTop: "9px", display: "flex", alignItems: "baseline", gap: "4px" }}>
+            <span style={{
+              fontSize: "16px", fontWeight: 900, color: "#1E1E2E",
+              fontFamily: "var(--font-nunito), sans-serif",
+            }}>{hotel.pricePerNight} €</span>
+            <span style={{ fontSize: "11px", color: "rgba(30,30,46,0.45)", fontWeight: 500 }}>/ nuit</span>
           </div>
         )}
       </div>
