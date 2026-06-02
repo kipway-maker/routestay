@@ -329,208 +329,146 @@ export default function SearchPageClient() {
             borderBottom: "1px solid rgba(0,0,0,0.07)",
             flexShrink: 0,
           }}>
-            {/* Timeline départ → durée → arrivée */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0", marginBottom: "14px" }}>
+            {/* ── Timeline départ → durée → arrivée ── */}
+            <div style={{
+              background: "#F8F7F4", borderRadius: "16px",
+              padding: "14px 18px 12px",
+              marginBottom: "14px",
+              border: "1px solid rgba(0,0,0,0.05)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0" }}>
 
-              {/* Départ */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: "70px" }}>
-                {origin && (
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1E1E2E", fontFamily: "var(--font-nunito), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px" }}>
-                    {origin.name.split(",")[0]}
-                  </span>
-                )}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {/* Départ */}
+                <div style={{ display: "flex", flexDirection: "column", minWidth: "90px" }}>
+                  {origin && (
+                    <span style={{ fontSize: "11px", fontWeight: 600, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "130px", marginBottom: "1px" }}>
+                      {origin.name.split(",")[0]}
+                    </span>
+                  )}
                   <input
                     type="time"
                     value={departureTime}
                     onChange={(e) => setDepartureTime(e.target.value)}
                     style={{
                       border: "none", background: "transparent", padding: 0,
-                      fontSize: "22px", fontWeight: 800, color: "#1E1E2E",
-                      outline: "none", cursor: "pointer", lineHeight: 1.1,
+                      fontSize: "24px", fontWeight: 800, color: "#1E1E2E",
+                      outline: "none", cursor: "pointer", lineHeight: 1,
                       fontFamily: "var(--font-nunito), sans-serif",
-                      width: "100px",
+                      width: "108px", marginBottom: "2px",
+                    }}
+                  />
+                  <input
+                    type="date"
+                    value={departureDate}
+                    onChange={(e) => setDepartureDate(e.target.value)}
+                    style={{
+                      border: "none", background: "transparent", padding: 0,
+                      fontSize: "10px", fontWeight: 600, color: "#6B7280",
+                      outline: "none", cursor: "pointer",
+                      fontFamily: "var(--font-inter), sans-serif",
                     }}
                   />
                 </div>
-                <span style={{ fontSize: "10px", fontWeight: 600, color: "#9ca3af", letterSpacing: "0.5px" }}>heure de départ</span>
-                {/* Date picker */}
-                <input
-                  type="date"
-                  value={departureDate}
-                  onChange={(e) => setDepartureDate(e.target.value)}
-                  style={{
-                    border: "none", background: "transparent", padding: 0,
-                    fontSize: "11px", fontWeight: 600, color: "#6B7280",
-                    outline: "none", cursor: "pointer",
-                    fontFamily: "var(--font-inter), sans-serif",
-                    marginTop: "2px",
-                  }}
-                />
-              </div>
 
-              {/* Ligne interactive milestones */}
-              <div style={{ flex: 1, margin: "0 16px", paddingTop: "14px" }}>
-                <div style={{ textAlign: "center", fontSize: "10px", color: "#9ca3af", fontWeight: 600, marginBottom: "6px", letterSpacing: "0.3px" }}>
-                  {routeDurationMin >= 60
-                    ? `${Math.floor(routeDurationMin / 60)}h${String(routeDurationMin % 60).padStart(2, "0")}`
-                    : `${routeDurationMin} min`}
-                </div>
-                {/* Zone cliquable large pour faciliter l'interaction */}
-                <div
-                  ref={timelineRef}
-                  style={{ position: "relative", height: "40px", cursor: "pointer", display: "flex", alignItems: "center" }}
-                  onMouseMove={(e) => {
-                    const rect = timelineRef.current!.getBoundingClientRect();
-                    const pct = Math.max(2, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
-                    setHoverPct(pct);
-
-                    // Reverse geocode avec debounce 400ms
-                    if (reverseDebounceRef.current) clearTimeout(reverseDebounceRef.current);
-                    if (!route?.coordinates?.length) return;
-                    reverseDebounceRef.current = setTimeout(() => {
-                      const coords = route.coordinates;
-                      const idx = Math.min(coords.length - 1, Math.floor((pct / 100) * coords.length));
-                      const [lng, lat] = coords[idx];
-                      const cacheKey = `${lat.toFixed(2)},${lng.toFixed(2)}`;
-                      if (cityCache.current.has(cacheKey)) {
-                        setHoverCity(cityCache.current.get(cacheKey)!);
-                        return;
-                      }
-                      fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
-                        .then((r) => r.json())
-                        .then(({ city }) => {
-                          if (city) {
-                            cityCache.current.set(cacheKey, city);
-                            setHoverCity(city);
-                          }
-                        })
-                        .catch(() => {});
-                    }, 380);
-                  }}
-                  onMouseLeave={() => {
-                    setHoverPct(null);
-                    setHoverCity(null);
-                    if (reverseDebounceRef.current) clearTimeout(reverseDebounceRef.current);
-                  }}
-                  onClick={(e) => {
-                    const rect = timelineRef.current!.getBoundingClientRect();
-                    const pct = Math.max(2, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
-                    setMilestonePct((prev) => (prev !== null && Math.abs(prev - pct) < 6 ? null : pct));
-                  }}
-                >
-                  {/* Track */}
-                  <div style={{ position: "absolute", left: 0, right: 12, height: "3px", background: "#e5e7eb", borderRadius: "2px" }}>
-                    {milestonePct !== null && (
-                      <div style={{ position: "absolute", left: 0, width: `${milestonePct}%`, height: "100%", background: "linear-gradient(to right, #E8644A, #F09070)", borderRadius: "2px", transition: "width 0.15s" }} />
-                    )}
+                {/* Ligne interactive */}
+                <div style={{ flex: 1, margin: "0 14px" }}>
+                  {/* Durée centrée */}
+                  <div style={{ textAlign: "center", fontSize: "10px", color: "#9ca3af", fontWeight: 600, letterSpacing: "0.3px", marginBottom: "5px" }}>
+                    {routeDurationMin >= 60
+                      ? `${Math.floor(routeDurationMin / 60)}h${String(routeDurationMin % 60).padStart(2, "0")}`
+                      : `${routeDurationMin} min`}
                   </div>
 
-                  {/* 🚗 Hover : voiture qui suit le curseur */}
-                  {hoverPct !== null && (
-                    <div style={{
-                      position: "absolute",
-                      left: `${hoverPct}%`,
-                      transform: "translateX(-50%)",
-                      pointerEvents: "none",
-                      display: "flex", flexDirection: "column", alignItems: "center",
-                      gap: "0px",
-                      transition: "left 0.04s linear",
-                    }}>
-                      {/* Ville (reverse geocode) */}
-                      {hoverCity && (
-                        <div style={{
-                          background: "rgba(26,26,46,0.75)", color: "#fff",
-                          fontSize: "10px", fontWeight: 600,
-                          padding: "2px 8px", borderRadius: "8px",
-                          whiteSpace: "nowrap", letterSpacing: "0.2px",
-                          backdropFilter: "blur(4px)",
-                          WebkitBackdropFilter: "blur(4px)",
-                          marginBottom: "2px",
-                        }}>
-                          {hoverCity}
-                        </div>
+                  {/* Track cliquable */}
+                  <div
+                    ref={timelineRef}
+                    style={{ position: "relative", height: "36px", cursor: "pointer", display: "flex", alignItems: "center" }}
+                    onMouseMove={(e) => {
+                      const rect = timelineRef.current!.getBoundingClientRect();
+                      const pct = Math.max(2, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+                      setHoverPct(pct);
+                      if (reverseDebounceRef.current) clearTimeout(reverseDebounceRef.current);
+                      if (!route?.coordinates?.length) return;
+                      reverseDebounceRef.current = setTimeout(() => {
+                        const coords = route.coordinates;
+                        const idx = Math.min(coords.length - 1, Math.floor((pct / 100) * coords.length));
+                        const [lng, lat] = coords[idx];
+                        const cacheKey = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+                        if (cityCache.current.has(cacheKey)) {
+                          setHoverCity(cityCache.current.get(cacheKey)!);
+                          return;
+                        }
+                        fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
+                          .then((r) => r.json())
+                          .then(({ city }) => {
+                            if (city) { cityCache.current.set(cacheKey, city); setHoverCity(city); }
+                          }).catch(() => {});
+                      }, 380);
+                    }}
+                    onMouseLeave={() => {
+                      setHoverPct(null); setHoverCity(null);
+                      if (reverseDebounceRef.current) clearTimeout(reverseDebounceRef.current);
+                    }}
+                    onClick={(e) => {
+                      const rect = timelineRef.current!.getBoundingClientRect();
+                      const pct = Math.max(2, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+                      setMilestonePct((prev) => (prev !== null && Math.abs(prev - pct) < 6 ? null : pct));
+                    }}
+                  >
+                    {/* Rail + remplissage */}
+                    <div style={{ position: "absolute", left: 0, right: 0, height: "2px", background: "#E2E8F0", borderRadius: "2px", top: "50%", transform: "translateY(-50%)" }}>
+                      {milestonePct !== null && (
+                        <div style={{ position: "absolute", left: 0, width: `${milestonePct}%`, height: "100%", background: "linear-gradient(to right, #E8644A, #F09070)", borderRadius: "2px", transition: "width 0.15s" }} />
                       )}
-                      {/* Bulle heure */}
-                      <div style={{
-                        background: "#1E1E2E", color: "#fff",
-                        fontSize: "11px", fontWeight: 800,
-                        padding: "3px 9px", borderRadius: "10px",
-                        whiteSpace: "nowrap", letterSpacing: "0.2px",
-                        boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
-                        marginBottom: "3px",
-                        fontFamily: "var(--font-nunito), sans-serif",
-                      }}>
-                        {getTimeAtPct(hoverPct)}
-                      </div>
-                      {/* Petite tige */}
-                      <div style={{ width: "1.5px", height: "6px", background: "#9ca3af" }} />
-                      {/* Voiture */}
-                      <div style={{
-                        fontSize: "16px", lineHeight: 1,
-                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
-                        transform: milestonePct === null ? "scale(1.1)" : "scale(1)",
-                        transition: "transform 0.1s",
-                      }}>🚗</div>
                     </div>
-                  )}
+                    {/* Point départ */}
+                    <div style={{ position: "absolute", left: 0, width: "7px", height: "7px", borderRadius: "50%", background: "#CBD5E1", top: "50%", transform: "translateY(-50%)" }} />
+                    {/* Flèche fin — SVG alignée exactement sur le rail */}
+                    <svg style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)" }} width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M1 5H9M9 5L5.5 1.5M9 5L5.5 8.5" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
 
-                  {/* 📍 Repère posé */}
-                  {milestonePct !== null && (
-                    <div style={{
-                      position: "absolute",
-                      left: `${milestonePct}%`,
-                      transform: "translateX(-50%)",
-                      display: "flex", flexDirection: "column", alignItems: "center",
-                    }}>
-                      {/* Bulle */}
-                      <div style={{
-                        background: "#E8644A", color: "#fff",
-                        fontSize: "11px", fontWeight: 800,
-                        padding: "4px 10px", borderRadius: "10px",
-                        whiteSpace: "nowrap",
-                        boxShadow: "0 3px 12px rgba(255,98,64,0.45)",
-                        fontFamily: "var(--font-nunito), sans-serif",
-                        marginBottom: "2px",
-                      }}>
-                        {getTimeAtPct(milestonePct)}
+                    {/* Hover : voiture */}
+                    {hoverPct !== null && (
+                      <div style={{ position: "absolute", left: `${hoverPct}%`, transform: "translateX(-50%)", pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", transition: "left 0.04s linear" }}>
+                        {hoverCity && (
+                          <div style={{ background: "rgba(26,26,46,0.75)", color: "#fff", fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: "8px", whiteSpace: "nowrap", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", marginBottom: "2px" }}>
+                            {hoverCity}
+                          </div>
+                        )}
+                        <div style={{ background: "#1E1E2E", color: "#fff", fontSize: "11px", fontWeight: 800, padding: "3px 9px", borderRadius: "10px", whiteSpace: "nowrap", boxShadow: "0 3px 10px rgba(0,0,0,0.2)", marginBottom: "3px", fontFamily: "var(--font-nunito), sans-serif" }}>
+                          {getTimeAtPct(hoverPct)}
+                        </div>
+                        <div style={{ width: "1.5px", height: "5px", background: "#94A3B8" }} />
+                        <div style={{ fontSize: "15px", lineHeight: 1, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}>🚗</div>
                       </div>
-                      {/* Queue de la bulle */}
-                      <div style={{
-                        width: 0, height: 0,
-                        borderLeft: "5px solid transparent",
-                        borderRight: "5px solid transparent",
-                        borderTop: "6px solid #E8644A",
-                        marginBottom: "1px",
-                      }} />
-                      {/* Point ancrage */}
-                      <div style={{
-                        width: "10px", height: "10px", borderRadius: "50%",
-                        background: "#E8644A", border: "2px solid #fff",
-                        boxShadow: "0 0 0 3px rgba(255,98,64,0.25)",
-                      }} />
-                    </div>
-                  )}
+                    )}
 
-                  {/* Flèche fin */}
-                  <div style={{ position: "absolute", right: 0, color: "#9ca3af", fontSize: "13px", lineHeight: 1, top: "50%", transform: "translateY(-50%)" }}>→</div>
+                    {/* Repère posé */}
+                    {milestonePct !== null && (
+                      <div style={{ position: "absolute", left: `${milestonePct}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <div style={{ background: "#E8644A", color: "#fff", fontSize: "11px", fontWeight: 800, padding: "4px 10px", borderRadius: "10px", whiteSpace: "nowrap", boxShadow: "0 3px 12px rgba(255,98,64,0.45)", fontFamily: "var(--font-nunito), sans-serif", marginBottom: "2px" }}>
+                          {getTimeAtPct(milestonePct)}
+                        </div>
+                        <div style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "6px solid #E8644A", marginBottom: "1px" }} />
+                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#E8644A", border: "2px solid #fff", boxShadow: "0 0 0 3px rgba(255,98,64,0.25)" }} />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Arrivée */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "1px", alignItems: "flex-end" }}>
-                {destination && (
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1E1E2E", fontFamily: "var(--font-nunito), sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "140px", textAlign: "right" }}>
-                    {destination.name.split(",")[0]}
+                {/* Arrivée */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  {destination && (
+                    <span style={{ fontSize: "11px", fontWeight: 600, color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "130px", textAlign: "right", marginBottom: "1px" }}>
+                      {destination.name.split(",")[0]}
+                    </span>
+                  )}
+                  <span style={{ fontSize: "24px", fontWeight: 800, color: "#E8644A", lineHeight: 1, fontFamily: "var(--font-nunito), sans-serif", marginBottom: "2px" }}>
+                    {addMinutes(departureTime, routeDurationMin)}
                   </span>
-                )}
-                <span style={{
-                  fontSize: "22px", fontWeight: 800, color: "#E8644A", lineHeight: 1.1,
-                  fontFamily: "var(--font-nunito), sans-serif",
-                }}>
-                  {addMinutes(departureTime, routeDurationMin)}
-                </span>
-                <span style={{ fontSize: "10px", fontWeight: 600, color: "#9ca3af", letterSpacing: "0.5px" }}>arrivée estimée</span>
+                  <span style={{ fontSize: "10px", fontWeight: 600, color: "#9ca3af", letterSpacing: "0.5px" }}>arrivée estimée</span>
+                </div>
               </div>
             </div>
 
