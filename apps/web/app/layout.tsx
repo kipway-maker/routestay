@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Nunito } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${inter.variable} ${nunito.variable}`}>
       <body style={{ fontFamily: "var(--font-inter), sans-serif", background: "#F8F7F4", height: "100vh", overflow: "hidden" }}>
         {children}
+        <Analytics />
       </body>
     </html>
   );
