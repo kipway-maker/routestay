@@ -159,10 +159,14 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
         offset: [0, -8],
         maxWidth: "300px",
         closeOnMove: false,
-        closeButton: true,
+        closeButton: false,
         closeOnClick: false,
       }).setHTML(`
-        <div style="width:260px;font-family:system-ui,sans-serif;padding:8px">
+        <div style="width:260px;font-family:system-ui,sans-serif;padding:8px;position:relative">
+          <button
+            onclick="this.closest('.maplibregl-popup').querySelector('.maplibregl-popup-close-button')?.click();window.__kipwayClose('${hotel.id}')"
+            style="position:absolute;top:-2px;right:-2px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.95);border:none;cursor:pointer;font-size:16px;color:#1E1E2E;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.15);line-height:1;z-index:1"
+          >×</button>
           <div style="width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#f3f4f6">
             <img src="${hotel.imageUrl}" style="width:100%;height:100%;object-fit:cover"
               onerror="this.src='https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop'"/>
@@ -205,8 +209,11 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
       popupsRef.current.set(hotel.id, popup);
     });
 
-    // Global handler for the "Voir →" button inside the popup
+    // Global handlers pour les boutons dans les popups
     (window as any).__kipwayExpand = (id: string) => onExpandRef.current(id);
+    (window as any).__kipwayClose  = (id: string) => {
+      popupsRef.current.get(id)?.remove();
+    };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hotels]);
