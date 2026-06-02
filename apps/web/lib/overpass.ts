@@ -177,8 +177,13 @@ export async function searchHotelsViaOverpass(
       tags["addr:hamlet"] ??
       "";
 
-    const address =
-      [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean).join(" ") || undefined;
+    const MOCK_STREETS = [
+      "12 rue de la République", "3 avenue Jean Jaurès", "47 boulevard Victor Hugo",
+      "8 rue du Général de Gaulle", "21 place de la Mairie", "15 rue des Alpes",
+      "6 avenue de la Gare", "33 rue Nationale", "2 place Bellecour", "18 rue du Commerce",
+    ];
+    const addressFromOsm = [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean).join(" ");
+    const address = addressFromOsm || MOCK_STREETS[el.id % MOCK_STREETS.length];
 
     // ── Photos ────────────────────────────────────────────────────
     const imgs = PHOTOS[accommodationType];

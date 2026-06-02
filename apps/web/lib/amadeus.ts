@@ -180,6 +180,12 @@ function generateMockHotels(points: Array<{ lat: number; lng: number }>): Hotel[
 
   const CHECKIN_DEADLINES = ["22:00", "23:00", "23:00", "23:30", "00:00", null];
 
+  const MOCK_ADDRESSES = [
+    "12 rue de la République", "3 avenue Jean Jaurès", "47 boulevard Victor Hugo",
+    "8 rue du Général de Gaulle", "21 place de la Mairie", "15 rue des Alpes",
+    "6 avenue de la Gare", "33 rue Nationale", "2 place Bellecour", "18 rue du Commerce",
+  ];
+
   return points.flatMap((point, i) =>
     Array.from({ length: Math.floor(Math.random() * 3) + 2 }, (_, j) => {
       const dist = Math.round(Math.random() * 8 * 10) / 10;
@@ -196,6 +202,7 @@ function generateMockHotels(points: Array<{ lat: number; lng: number }>): Hotel[
         detourMinutes,
         routePositionPct,
         city: cities[(i + j) % cities.length],
+        address: MOCK_ADDRESSES[(i * 3 + j) % MOCK_ADDRESSES.length],
         pricePerNight: Math.floor(Math.random() * 120) + 45,
         currency: "EUR",
         rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
@@ -207,7 +214,6 @@ function generateMockHotels(points: Array<{ lat: number; lng: number }>): Hotel[
         images: (() => {
           const type = ACCOM_TYPES[(i * 3 + j) % ACCOM_TYPES.length];
           const imgs = MOCK_IMAGES_BY_TYPE[type];
-          // 3 photos décalées pour le carousel
           return [0, 1, 2].map((k) => imgs[(i * 3 + j + k) % imgs.length]);
         })(),
         checkinDeadline: CHECKIN_DEADLINES[(i * 3 + j) % CHECKIN_DEADLINES.length],
