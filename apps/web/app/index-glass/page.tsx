@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useRouter } from "next/navigation";
 import SearchBar from "@/components/SearchBar";
 
@@ -22,17 +23,25 @@ function Orb({ x, y, size, color, opacity = 0.55 }: { x: string; y: string; size
 }
 
 // ── Carte glass ───────────────────────────────────────────────
-function GlassCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function GlassCard({ children, style, hover = false }: { children: React.ReactNode; style?: React.CSSProperties; hover?: boolean }) {
+  const [hovered, setHovered] = React.useState(false);
   return (
-    <div style={{
-      background: "rgba(255,255,255,0.45)",
-      backdropFilter: "blur(20px)",
-      WebkitBackdropFilter: "blur(20px)",
-      border: "1px solid rgba(255,255,255,0.65)",
-      borderRadius: "24px",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.8)",
-      ...style,
-    }}>
+    <div
+      onMouseEnter={() => hover && setHovered(true)}
+      onMouseLeave={() => hover && setHovered(false)}
+      style={{
+        background: hovered ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.20)",
+        backdropFilter: "blur(40px)",
+        WebkitBackdropFilter: "blur(40px)",
+        border: hovered ? "1px solid rgba(255,255,255,0.75)" : "1px solid rgba(255,255,255,0.40)",
+        borderRadius: "24px",
+        boxShadow: hovered
+          ? "0 24px 64px rgba(120,80,200,0.22), 0 8px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)"
+          : "0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)",
+        transform: hovered ? "translateY(-4px)" : "none",
+        transition: "all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+        ...style,
+      }}>
       {children}
     </div>
   );
@@ -72,20 +81,20 @@ export default function IndexGlass() {
     <div style={{
       minHeight: "100vh",
       overflowY: "auto", overflowX: "hidden",
-      background: "linear-gradient(135deg, #FFE8D6 0%, #FFF4EE 20%, #EEF4FF 45%, #F4EEFF 70%, #FFE8F2 100%)",
+      background: "linear-gradient(135deg, #F5C6FF 0%, #FFB5C8 18%, #FFD4A8 35%, #C8E8FF 55%, #D4C0FF 75%, #FFB5D8 100%)",
       fontFamily: "var(--font-inter,'Inter'),sans-serif",
       position: "relative",
     }}>
 
       {/* ── ORBES DE FOND ── */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        <Orb x="10%"  y="12%"  size={420} color="#FFB5A0" opacity={0.35} />
-        <Orb x="82%"  y="8%"   size={380} color="#A8C8FF" opacity={0.30} />
-        <Orb x="55%"  y="38%"  size={320} color="#D4B8FF" opacity={0.25} />
-        <Orb x="15%"  y="55%"  size={350} color="#FFD6A0" opacity={0.28} />
-        <Orb x="88%"  y="60%"  size={300} color="#A8E8D0" opacity={0.25} />
-        <Orb x="40%"  y="80%"  size={400} color="#FFB0C8" opacity={0.22} />
-        <Orb x="70%"  y="90%"  size={280} color="#FFE0A0" opacity={0.28} />
+        <Orb x="5%"   y="8%"   size={520} color="#FF6EB4" opacity={0.55} />
+        <Orb x="85%"  y="5%"   size={460} color="#7B61FF" opacity={0.50} />
+        <Orb x="50%"  y="35%"  size={400} color="#FF9A3E" opacity={0.42} />
+        <Orb x="12%"  y="65%"  size={480} color="#00D4FF" opacity={0.45} />
+        <Orb x="90%"  y="62%"  size={380} color="#FF4D9E" opacity={0.48} />
+        <Orb x="38%"  y="12%"  size={300} color="#FFA500" opacity={0.38} />
+        <Orb x="62%"  y="85%"  size={340} color="#A855F7" opacity={0.40} />
       </div>
 
       {/* ── HEADER GLASS ── */}
@@ -202,7 +211,7 @@ export default function IndexGlass() {
             { value: "< 2 sec", label: "Calcul d'itinéraire", icon: "⚡" },
             { value: "100%", label: "Gratuit", icon: "🎯" },
           ].map((stat) => (
-            <GlassCard key={stat.label} style={{ padding: "28px 20px", textAlign: "center" }}>
+            <GlassCard hover key={stat.label} style={{ padding: "28px 20px", textAlign: "center" }}>
               <div style={{ fontSize: "28px", marginBottom: "8px" }}>{stat.icon}</div>
               <div style={{
                 fontFamily: "var(--font-nunito)",
@@ -242,7 +251,7 @@ export default function IndexGlass() {
             { step: "02", icon: "🗺️", title: "Explorez les hôtels", desc: "Tous les hébergements sur votre chemin, avec le détour.", color: "#A78BFA" },
             { step: "03", icon: "🚗", title: "Partez !", desc: "Réservez en un clic. La route vous attend.", color: "#06D6A0" },
           ].map((item) => (
-            <GlassCard key={item.step} style={{ padding: "28px 24px" }}>
+            <GlassCard hover key={item.step} style={{ padding: "28px 24px" }}>
               <div style={{
                 width: "48px", height: "48px", borderRadius: "16px",
                 background: `${item.color}18`,

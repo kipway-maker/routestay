@@ -30,24 +30,36 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
     <div
       onClick={() => onSelect(hotel.id)}
       style={{
-        background: "rgba(255,255,255,0.55)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        background: "rgba(255,255,255,0.22)",
+        backdropFilter: "blur(32px)",
+        WebkitBackdropFilter: "blur(32px)",
         borderRadius: "16px",
         overflow: "hidden",
         cursor: "pointer",
-        border: selected ? "2px solid #E8644A" : isTight ? "2px solid #F59E0B" : "1px solid rgba(255,255,255,0.7)",
+        border: selected ? "1.5px solid rgba(232,100,74,0.8)" : isTight ? "1.5px solid rgba(245,158,11,0.7)" : "1px solid rgba(255,255,255,0.45)",
         boxShadow: selected
-          ? "0 8px 28px rgba(232,100,74,0.28), 0 2px 8px rgba(0,0,0,0.06)"
-          : "0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)",
-        transition: "all 0.18s ease",
-        transform: selected ? "translateY(-2px) scale(1.01)" : "none",
+          ? "0 12px 40px rgba(232,100,74,0.35), 0 4px 12px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)"
+          : "0 4px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)",
+        transition: "all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+        transform: selected ? "translateY(-4px) scale(1.02)" : "none",
       }}
       onMouseEnter={(e) => {
-        if (!selected) (e.currentTarget as HTMLDivElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.13)";
+        if (!selected) {
+          const el = e.currentTarget as HTMLDivElement;
+          el.style.transform = "translateY(-6px) scale(1.02)";
+          el.style.background = "rgba(255,255,255,0.38)";
+          el.style.boxShadow = "0 20px 60px rgba(120,80,200,0.2), 0 8px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)";
+          el.style.border = "1px solid rgba(255,255,255,0.75)";
+        }
       }}
       onMouseLeave={(e) => {
-        if (!selected) (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)";
+        if (!selected) {
+          const el = e.currentTarget as HTMLDivElement;
+          el.style.transform = "none";
+          el.style.background = "rgba(255,255,255,0.22)";
+          el.style.boxShadow = "0 4px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5)";
+          el.style.border = "1px solid rgba(255,255,255,0.45)";
+        }
       }}
     >
       {/* Selected accent bar */}
