@@ -30,14 +30,16 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
     <div
       onClick={() => onSelect(hotel.id)}
       style={{
-        background: "#FFFFFF",
+        background: "rgba(255,255,255,0.55)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         borderRadius: "16px",
         overflow: "hidden",
         cursor: "pointer",
-        border: selected ? "2px solid #E8644A" : isTight ? "2px solid #F59E0B" : "2px solid transparent",
+        border: selected ? "2px solid #E8644A" : isTight ? "2px solid #F59E0B" : "1px solid rgba(255,255,255,0.7)",
         boxShadow: selected
           ? "0 8px 28px rgba(232,100,74,0.28), 0 2px 8px rgba(0,0,0,0.06)"
-          : "0 2px 8px rgba(0,0,0,0.07)",
+          : "0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)",
         transition: "all 0.18s ease",
         transform: selected ? "translateY(-2px) scale(1.01)" : "none",
       }}

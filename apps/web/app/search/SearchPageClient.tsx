@@ -252,7 +252,30 @@ export default function SearchPageClient() {
   const activeFilters = activeFilterCount(filters);
 
   return (
-    <div ref={containerRef} style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden", background: "#F8F7F4" }}>
+    <div ref={containerRef} style={{
+      display: "flex", height: "100vh", width: "100%", overflow: "hidden",
+      background: "linear-gradient(135deg, #FFE8D6 0%, #FFF4EE 20%, #EEF4FF 50%, #F4EEFF 75%, #FFE8F2 100%)",
+      position: "relative",
+    }}>
+
+      {/* ── ORBES DE FOND ── */}
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
+        {[
+          { x: "8%",  y: "15%", s: 320, c: "#FFB5A0", o: 0.30 },
+          { x: "78%", y: "6%",  s: 280, c: "#A8C8FF", o: 0.25 },
+          { x: "50%", y: "45%", s: 260, c: "#D4B8FF", o: 0.20 },
+          { x: "18%", y: "65%", s: 300, c: "#FFD6A0", o: 0.22 },
+          { x: "85%", y: "70%", s: 240, c: "#A8E8D0", o: 0.20 },
+        ].map((o, i) => (
+          <div key={i} style={{
+            position: "absolute", left: o.x, top: o.y,
+            width: o.s, height: o.s, borderRadius: "50%",
+            background: o.c, opacity: o.o,
+            filter: `blur(${o.s * 0.45}px)`,
+            transform: "translate(-50%, -50%)",
+          }} />
+        ))}
+      </div>
 
       {/* ── PANNEAU HÔTELS — gauche ── */}
       <div style={{
@@ -261,18 +284,22 @@ export default function SearchPageClient() {
         display: "flex",
         flexDirection: "column",
         overflow: "visible",
-        background: "#F8F7F4",
+        background: "transparent",
+        position: "relative", zIndex: 1,
       }}>
 
         {/* Header : logo + search + filtres */}
         <div style={{
           padding: "8px 20px",
-          background: "#FFFFFF",
-          borderBottom: "1px solid rgba(0,0,0,0.07)",
+          background: "rgba(255,255,255,0.55)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255,255,255,0.6)",
           flexShrink: 0,
           display: "flex", alignItems: "center", gap: "12px",
           position: "relative",
           isolation: "isolate",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
         }}>
           {/* Gradient top border — avoids border-image / border-radius incompatibility on Windows */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
@@ -326,16 +353,22 @@ export default function SearchPageClient() {
         {routeDurationMin > 0 && (
           <div style={{
             padding: "16px 20px 14px",
-            background: "linear-gradient(180deg, rgba(232,100,74,0.04) 0%, #FFFFFF 60%)",
-            borderBottom: "1px solid rgba(0,0,0,0.07)",
+            background: "rgba(255,255,255,0.35)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderBottom: "1px solid rgba(255,255,255,0.5)",
             flexShrink: 0,
           }}>
             {/* ── Timeline départ → durée → arrivée ── */}
             <div style={{
-              background: "#F8F7F4", borderRadius: "16px",
+              background: "rgba(255,255,255,0.50)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              borderRadius: "16px",
               padding: "14px 18px 12px",
               marginBottom: "14px",
-              border: "1px solid rgba(0,0,0,0.05)",
+              border: "1px solid rgba(255,255,255,0.7)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9)",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0" }}>
 
@@ -538,7 +571,9 @@ export default function SearchPageClient() {
                   style={{
                     padding: "8px 16px", borderRadius: "24px",
                     border: item.active ? "2px solid #E8644A" : "1.5px solid #e5e7eb",
-                    background: item.active ? "#E8644A" : "#F8F7F4",
+                    background: item.active ? "#E8644A" : "rgba(255,255,255,0.55)",
+                    backdropFilter: item.active ? "none" : "blur(8px)",
+                    WebkitBackdropFilter: item.active ? "none" : "blur(8px)",
                     color: item.active ? "#FFFFFF" : "#374151",
                     fontSize: "13px", fontWeight: 700, cursor: "pointer",
                     transition: "all 0.15s", whiteSpace: "nowrap",
