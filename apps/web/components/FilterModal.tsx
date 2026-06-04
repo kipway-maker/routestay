@@ -182,7 +182,7 @@ export default function FilterModal({
                 checked={filters.maxDetourMin === null}
                 onChange={(e) => onChange({
                   ...filters,
-                  maxDetourMin: e.target.checked ? null : 15,
+                  maxDetourMin: e.target.checked ? null : 5,
                 })}
                 style={{ width: "20px", height: "20px", accentColor: "#FF6240", cursor: "pointer" }}
               />
@@ -194,7 +194,7 @@ export default function FilterModal({
               <div style={{ fontSize: "12px", color: "#6B7280", lineHeight: "1.5" }}>
                 {filters.maxDetourMin === null
                   ? "Tous les hôtels s'affichent, même ceux avec un détour."
-                  : "Seuls les hôtels proches de votre route s'affichent (≤ 15 min de détour)."}
+                  : "Seuls les hôtels proches de votre route s'affichent (≤ 5 min de détour)."}
               </div>
             </div>
           </label>

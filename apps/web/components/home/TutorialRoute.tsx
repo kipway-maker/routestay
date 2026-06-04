@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 
-// ── Bezier solver (ROAD_PATH original) ────────────────────────
+// ── Bezier solver — M 300,80 C 750,80 710,270 680,520 ──────────
 function bezierPt(t: number) {
   const mt = 1 - t;
   return {
-    x: mt*mt*mt*250 + 3*mt*mt*t*600 + 3*mt*t*t*680 + t*t*t*680,
-    y: mt*mt*mt*90  + 3*mt*mt*t*90  + 3*mt*t*t*310 + t*t*t*520,
+    x: mt*mt*mt*300 + 3*mt*mt*t*750 + 3*mt*t*t*710 + t*t*t*680,
+    y: mt*mt*mt*80  + 3*mt*mt*t*80  + 3*mt*t*t*270 + t*t*t*520,
   };
 }
 function bezierTangent(t: number) {
   const mt = 1 - t;
-  const tx = 3*(mt*mt*(600-250) + 2*mt*t*(680-600) + t*t*(680-680));
-  const ty = 3*(mt*mt*(90-90)   + 2*mt*t*(310-90)  + t*t*(520-310));
+  const tx = 3*(mt*mt*(750-300) + 2*mt*t*(710-750) + t*t*(680-710));
+  const ty = 3*(mt*mt*(80-80)   + 2*mt*t*(270-80)  + t*t*(520-270));
   const len = Math.sqrt(tx*tx + ty*ty);
   return { tx: tx/len, ty: ty/len };
 }
@@ -63,38 +63,435 @@ function PinIcon({ name, color }: { name: IconName; color: string }) {
 
 // ── Data ──────────────────────────────────────────────────────
 const STEPS = [
-  { number:"01", icon:"itinerary" as const, color:"#E8644A", title:"Entrez votre itinéraire",    desc:"Départ + arrivée. Votre route calculée en quelques secondes." },
-  { number:"02", icon:"filter"    as const, color:"#6FA8C0", title:"Personnalisez la recherche", desc:"Budget, borne EV, note, détour. Filtrez jusqu'au bon hôtel." },
-  { number:"03", icon:"map"       as const, color:"#E8644A", title:"Cherchez sur l'itinéraire",  desc:"Cliquez sur votre route pour voir les hôtels à cette étape." },
-  { number:"04", icon:"car"       as const, color:"#6FA8C0", title:"Partez en voyage",           desc:"Réservez en un clic. La route vous attend." },
+  { number:"01", icon:"itinerary" as const, color:"#E8644A", title:"Entrez deux villes",           desc:"Une ville de départ, une d'arrivée. La route se calcule en quelques secondes." },
+  { number:"02", icon:"filter"    as const, color:"#6FA8C0", title:"Personnalisez la recherche",   desc:"Budget, borne EV, note, détour. Filtrez jusqu'au bon hôtel." },
+  { number:"03", icon:"map"       as const, color:"#E8644A", title:"Cherchez sur l'itinéraire",    desc:"Cliquez sur votre route pour voir les hôtels à cette étape." },
+  { number:"04", icon:"car"       as const, color:"#6FA8C0", title:"Partez en voyage",             desc:"Réservez en un clic. La route vous attend." },
 ];
 
 const PINS = [
-  { x:250, y:90   },
+  { x:300, y:80   },
   { x:680, y:520  },
   { x:120, y:980  },
   { x:680, y:1400 },
 ];
+const ICON_R = 24; // rayon du cercle icône
 const cardAligns: ("left"|"right")[] = ["right","left","right","left"];
 
+// Boucle = cercle propre r≈140, centre (160,840)
+// 4 quarts de cercle successifs + croisement net au sommet (160,700)
 const ROAD_PATH = `
-  M 250,90
-  C 600,90 680,310 680,520
-  C 680,640 420,720 140,700
-  C 30,695 120,840 120,980
+  M 300,80
+  C 750,80 710,270 680,520
+  C 680,640 420,720 160,700
+  C 83,700 20,763 20,840
+  C 20,917 83,980 160,980
+  C 237,980 300,917 300,840
+  C 300,763 237,700 160,700
+  C 140,740 120,850 120,980
   C 120,1120 400,1200 660,1180
   C 700,1178 680,1310 680,1400
 `;
 
-const HOTELS = [
-  { x:700, y:290,  color:"#FFD166" },
-  { x:80,  y:620,  color:"#06D6A0" },
-  { x:700, y:840,  color:"#E8644A" },
-  { x:80,  y:1090, color:"#6FA8C0" },
-  { x:700, y:1290, color:"#A78BFA" },
-];
+// ── Vue mer ───────────────────────────────────────────────────
 
-// ── Composants SVG ────────────────────────────────────────────
+/** Vue mer — côte à droite du rond */
+function SeaView({ x, y }: { x:number; y:number }) {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {/* Aplat mer */}
+      <rect x="0" y="8" width="440" height="220" rx="4" fill="#88C4E0" opacity="0.48"/>
+      {/* Horizon — légèrement ondulé */}
+      <path d="M 0,8 C 70,0 150,16 230,6 C 310,-2 380,10 440,6 L 440,8 Z"
+        fill="#6AAED4" opacity="0.6"/>
+      {/* Vagues */}
+      <path d="M 10,50 Q 55,41 100,50 Q 145,59 190,50 Q 235,41 280,50 Q 325,59 370,50 Q 410,43 440,48"
+        fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M 0,88 Q 50,80 100,88 Q 150,96 200,88 Q 250,80 300,88 Q 350,96 410,88"
+        fill="none" stroke="rgba(255,255,255,0.38)" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M 20,126 Q 70,118 120,126 Q 170,134 220,126 Q 270,118 320,126"
+        fill="none" stroke="rgba(255,255,255,0.26)" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Île à l'horizon */}
+      <ellipse cx="200" cy="7" rx="30" ry="9"  fill="#8AAAB8" opacity="0.55"/>
+      <ellipse cx="200" cy="4" rx="22" ry="6"  fill="#9ABACE" opacity="0.45"/>
+      {/* Voilier */}
+      <g transform="translate(330,12)">
+        {/* Coque */}
+        <path d="M -15,7 Q 0,13 15,7 L 11,0 L -11,0 Z" fill="#C89858"/>
+        {/* Grande voile */}
+        <polygon points="0,-40 -18,0 18,0" fill="white" opacity="0.92"/>
+        {/* Trinquette */}
+        <polygon points="2,-28 18,0 3,0" fill="#EEF4FA" opacity="0.72"/>
+        {/* Mât */}
+        <line x1="0" y1="-40" x2="0" y2="0" stroke="#A07840" strokeWidth="1.5"/>
+      </g>
+      {/* Reflet soleil */}
+      <path d="M 330,148 Q 358,141 385,148 Q 412,155 440,149"
+        fill="none" stroke="rgba(255,235,160,0.3)" strokeWidth="4" strokeLinecap="round"/>
+    </g>
+  );
+}
+
+// ── Éléments naturels ─────────────────────────────────────────
+
+/** Chaîne de montagnes — fond paysager */
+function Mountains({ x, y }: { x:number; y:number }) {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {/* Lointain — brumeux */}
+      <polygon points="-70,0 -38,-68 -6,0"    fill="#C8D8EC" opacity="0.5"/>
+      <polygon points="-24,0  22,-86  68,0"   fill="#B8C8DC" opacity="0.5"/>
+      <polygon points=" 40,0  78,-58 116,0"   fill="#C8D8EC" opacity="0.44"/>
+      {/* Avant-plan */}
+      <polygon points="-54,0   2,-122  58,0"  fill="#94AEC6"/>
+      <polygon points="  8,0  76,-138 144,0"  fill="#84A0B8"/>
+      <polygon points=" 84,0 122,-80  160,0"  fill="#94AEC6" opacity="0.88"/>
+      {/* Flancs ombre */}
+      <polygon points="2,-122 58,0 -4,0"      fill="#7090A8" opacity="0.22"/>
+      <polygon points="76,-138 144,0 108,0"   fill="#7090A8" opacity="0.2"/>
+      {/* Neige */}
+      <polygon points="-8,-90  2,-122  12,-90" fill="white" opacity="0.74"/>
+      <polygon points="66,-104 76,-138 86,-104" fill="white" opacity="0.74"/>
+      {/* Reflet neige (face ombre) */}
+      <polygon points="-8,-90  2,-122 -4,-98"  fill="#C4D4E8" opacity="0.5"/>
+      <polygon points="66,-104 76,-138 70,-112" fill="#C4D4E8" opacity="0.5"/>
+    </g>
+  );
+}
+
+/** 3 tournesols — typiques des routes de France */
+function SunflowerField({ x, y }: { x:number; y:number }) {
+  const flowers: { dx:number; h:number; s:number }[] = [
+    { dx:-18, h:44, s:1.12 },
+    { dx:  0, h:36, s:1.0  },
+    { dx: 17, h:29, s:0.86 },
+  ];
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {flowers.map((f, i) => (
+        <g key={i} transform={`translate(${f.dx},0)`}>
+          <line x1="0" y1="0" x2="0" y2={-f.h} stroke="#4A7A30" strokeWidth="2.5" strokeLinecap="round"/>
+          <ellipse cx={i%2===0 ? -6:6} cy={-f.h*0.42} rx="7" ry="3.5" fill="#4A7A30"
+            transform={`rotate(${i%2===0?-28:28},${i%2===0?-6:6},${-f.h*0.42})`}/>
+          {/* Pétales : 8 ellipses tournantes */}
+          {[0,45,90,135,180,225,270,315].map(a => (
+            <ellipse key={a} cx="0" cy={-f.h-9} rx="3" ry="8" fill="#F5C842"
+              opacity="0.95" transform={`rotate(${a},0,${-f.h})`}/>
+          ))}
+          <circle cx="0" cy={-f.h} r="8"   fill="#7B4A18"/>
+          <circle cx="0" cy={-f.h} r="5.5" fill="#5A3010" opacity="0.85"/>
+          <circle cx={-2} cy={-f.h-1} r="1.5" fill="rgba(255,255,255,0.2)"/>
+        </g>
+      ))}
+    </g>
+  );
+}
+
+/** Coquelicots — fleurs sauvages des bords de route */
+function PoppyPatch({ x, y }: { x:number; y:number }) {
+  const poppies: { dx:number; dy:number; h:number; s:number }[] = [
+    { dx:0,   dy:0,  h:14, s:1.0  },
+    { dx:13,  dy:-3, h:11, s:0.85 },
+    { dx:-10, dy:-1, h:17, s:1.1  },
+    { dx:22,  dy:2,  h:10, s:0.78 },
+    { dx:6,   dy:-9, h:19, s:1.15 },
+    { dx:-17, dy:3,  h:13, s:0.9  },
+  ];
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {poppies.map((p, i) => (
+        <g key={i} transform={`translate(${p.dx},${p.dy}) scale(${p.s})`}>
+          <line x1="0" y1="0" x2="0" y2={p.h} stroke="#4A7A30" strokeWidth="1.5" strokeLinecap="round"/>
+          {/* 4 pétales arrondis */}
+          {[0,90,180,270].map(a => (
+            <ellipse key={a} cx="0" cy={-7} rx="4.5" ry="7.5" fill="#E8644A"
+              opacity="0.92" transform={`rotate(${a},0,0)`}/>
+          ))}
+          <circle cx="0" cy="0" r="3.5" fill="#1A1020" opacity="0.88"/>
+          <circle cx="0" cy="-1" r="1.4" fill="rgba(255,255,255,0.3)"/>
+        </g>
+      ))}
+    </g>
+  );
+}
+
+/** Épis de blé — champs dorés */
+function WheatField({ x, y }: { x:number; y:number }) {
+  const stalks = Array.from({ length: 14 }, (_, i) => ({
+    dx: i * 7 + (i % 2) * 3,
+    h:  22 + (i % 3) * 5,
+  }));
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {stalks.map((s, i) => (
+        <g key={i} transform={`translate(${s.dx},0)`}>
+          <line x1="0" y1="0" x2="0" y2={-s.h} stroke="#C8A840" strokeWidth="1.8" strokeLinecap="round"/>
+          {/* Épi */}
+          <ellipse cx="0" cy={-s.h-5} rx="2.8" ry="7" fill="#D4B030" opacity="0.92"/>
+          {/* Barbes */}
+          <line x1="0" y1={-s.h-4} x2="-5" y2={-s.h-12} stroke="#C8A040" strokeWidth="0.9" opacity="0.6"/>
+          <line x1="0" y1={-s.h-4} x2=" 5" y2={-s.h-12} stroke="#C8A040" strokeWidth="0.9" opacity="0.6"/>
+          <line x1="0" y1={-s.h-7} x2="-4" y2={-s.h-14} stroke="#C8A040" strokeWidth="0.8" opacity="0.5"/>
+          <line x1="0" y1={-s.h-7} x2=" 4" y2={-s.h-14} stroke="#C8A040" strokeWidth="0.8" opacity="0.5"/>
+        </g>
+      ))}
+    </g>
+  );
+}
+
+/** Rangées de vignes — Sud de la France */
+function Vineyard({ x, y }: { x:number; y:number }) {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {[0,1,2,3].map(r => {
+        const ry = r * 14;
+        return (
+          <g key={r}>
+            {/* Sol entre rangs */}
+            <line x1="0" y1={ry} x2="64" y2={ry} stroke="#A89060" strokeWidth="1" opacity="0.25"/>
+            {[0,1,2,3,4,5].map(p => {
+              const px = 5 + p * 11;
+              return (
+                <g key={p} transform={`translate(${px},${ry})`}>
+                  {/* Piquet */}
+                  <line x1="0" y1="1" x2="0" y2="-13" stroke="#C0A070" strokeWidth="1.2" opacity="0.55"/>
+                  {/* Feuillage */}
+                  <ellipse cx="0" cy="-13" rx="6" ry="4.5" fill="#4A8030" opacity="0.88"/>
+                  <ellipse cx="-3" cy="-11" rx="4" ry="3" fill="#3A7020" opacity="0.7"/>
+                  {/* Grappe de raisin */}
+                  <ellipse cx=" 2" cy="-8" rx="3.5" ry="4.5" fill="#7A5898" opacity="0.78"/>
+                  <ellipse cx="-1" cy="-8" rx="2.5" ry="3.5" fill="#6A4888" opacity="0.65"/>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+/** Botte de foin ronde */
+function HayBale({ x, y, s=1 }: { x:number; y:number; s?:number }) {
+  return (
+    <g transform={`translate(${x},${y}) scale(${s})`}>
+      <ellipse cx="0" cy="8" rx="21" ry="5" fill="rgba(0,0,0,0.08)"/>
+      <circle cx="0" cy="0" r="18" fill="#D4A840"/>
+      {/* Cerceaux de foin */}
+      {[5,9,13,17].map(r => (
+        <circle key={r} cx="0" cy="0" r={r} fill="none" stroke="#A87C18" strokeWidth="1.2" opacity="0.4"/>
+      ))}
+      {/* Lignes radiales */}
+      {[0,60,120,180,240,300].map(a => (
+        <line key={a}
+          x1={Math.cos(a*Math.PI/180)*5} y1={Math.sin(a*Math.PI/180)*5}
+          x2={Math.cos(a*Math.PI/180)*17} y2={Math.sin(a*Math.PI/180)*17}
+          stroke="#A87C18" strokeWidth="0.8" opacity="0.3"/>
+      ))}
+      <circle cx="0" cy="0" r="18" fill="none" stroke="#A07818" strokeWidth="1.5"/>
+      <circle cx="-5" cy="-5" r="5" fill="rgba(255,255,255,0.1)"/>
+    </g>
+  );
+}
+
+/** Rivière — méandre de campagne */
+function River({ x, y }: { x:number; y:number }) {
+  return (
+    <g transform={`translate(${x},${y})`} opacity="0.78">
+      {/* Berges (plus large, plus clair) */}
+      <path d="M 0,0 C 25,18 65,8 95,30 C 125,52 155,42 185,60"
+        fill="none" stroke="#9ACCE0" strokeWidth="16" strokeLinecap="round"/>
+      {/* Eau */}
+      <path d="M 0,0 C 25,18 65,8 95,30 C 125,52 155,42 185,60"
+        fill="none" stroke="#6AB4D0" strokeWidth="10" strokeLinecap="round"/>
+      {/* Reflet */}
+      <path d="M 8,5 C 32,22 70,12 99,33 C 128,55 157,45 185,60"
+        fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="3" strokeLinecap="round"/>
+    </g>
+  );
+}
+
+/** Rangées de lavande — Provence */
+function LavenderField({ x, y }: { x:number; y:number }) {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {[0,1,2,3,4].map(r => {
+        const ry = r * 13;
+        return (
+          <g key={r}>
+            {[0,1,2,3,4,5,6].map(p => {
+              const px = p * 10;
+              return (
+                <g key={p} transform={`translate(${px},${ry})`}>
+                  {/* Tige */}
+                  <line x1="0" y1="0" x2="0" y2="-20" stroke="#6A8850" strokeWidth="2" strokeLinecap="round"/>
+                  {/* Épi floral — 3 ellipses superposées */}
+                  <ellipse cx="0"  cy="-23" rx="2.8" ry="7"   fill="#9B7ED0" opacity="0.92"/>
+                  <ellipse cx="-2" cy="-20" rx="2"   ry="4.5" fill="#8B6EC0" opacity="0.72"/>
+                  <ellipse cx=" 2" cy="-20" rx="2"   ry="4.5" fill="#8B6EC0" opacity="0.72"/>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+// ── Soleil, Montgolfière, Voiture ─────────────────────────────
+
+function Sun({ x, y, s=1 }: { x:number; y:number; s?:number }) {
+  const rays = [0,30,60,90,120,150,180,210,240,270,300,330];
+  return (
+    <g transform={`translate(${x},${y}) scale(${s})`}>
+      <circle cx="0" cy="0" r="60" fill="#F9D55A" opacity="0.09"/>
+      <circle cx="0" cy="0" r="46" fill="#F9D55A" opacity="0.16"/>
+      {rays.map(a => (
+        <line key={a}
+          x1={Math.cos(a*Math.PI/180)*34} y1={Math.sin(a*Math.PI/180)*34}
+          x2={Math.cos(a*Math.PI/180)*48} y2={Math.sin(a*Math.PI/180)*48}
+          stroke="#F9D55A" strokeWidth="3.5" strokeLinecap="round"/>
+      ))}
+      <circle cx="0" cy="0" r="28" fill="#F9D55A"/>
+      <circle cx="-8" cy="-8" r="9" fill="rgba(255,255,255,0.28)"/>
+    </g>
+  );
+}
+
+function HotAirBalloon({ x, y }: { x:number; y:number }) {
+  // Forme poire réaliste d'une vraie montgolfière
+  const body = "M 0,-74 C 42,-72 66,-36 66,-4 C 66,30 46,62 0,70 C -46,62 -66,30 -66,-4 C -66,-36 -42,-72 0,-74 Z";
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <defs>
+        <clipPath id="balloonClip">
+          <path d={body}/>
+        </clipPath>
+      </defs>
+
+      {/* ─ Enveloppe ─ */}
+      {/* Base bleue */}
+      <path d={body} fill="#6FA8C0"/>
+
+      {/* Panneaux verticaux clippés */}
+      <g clipPath="url(#balloonClip)">
+        {/* 3 panneaux coral + 2 jaunes + espaces bleus */}
+        <rect x="-66" y="-74" width="26" height="144" fill="#E8644A" opacity="0.88"/>
+        <rect x="-18" y="-74" width="36" height="144" fill="#F5C842" opacity="0.82"/>
+        <rect x=" 40" y="-74" width="26" height="144" fill="#E8644A" opacity="0.88"/>
+        {/* Lisérés entre panneaux */}
+        <line x1="-40" y1="-74" x2="-40" y2="70" stroke="rgba(0,0,0,0.08)" strokeWidth="1.2"/>
+        <line x1="-18" y1="-74" x2="-18" y2="70" stroke="rgba(0,0,0,0.07)" strokeWidth="1"/>
+        <line x1=" 18" y1="-74" x2=" 18" y2="70" stroke="rgba(0,0,0,0.07)" strokeWidth="1"/>
+        <line x1=" 40" y1="-74" x2=" 40" y2="70" stroke="rgba(0,0,0,0.08)" strokeWidth="1.2"/>
+        {/* Reflet haut-gauche → effet 3D */}
+        <ellipse cx="-22" cy="-32" rx="18" ry="28" fill="rgba(255,255,255,0.13)"/>
+        {/* Ombrage bord droit */}
+        <rect x="54" y="-74" width="12" height="144" fill="rgba(0,0,0,0.08)"/>
+      </g>
+
+      {/* Contour fin */}
+      <path d={body} fill="none" stroke="rgba(255,255,255,0.32)" strokeWidth="1.5"/>
+
+      {/* Couronne (sommet) */}
+      <ellipse cx="0" cy="-74" rx="20" ry="7"  fill="#3A7890"/>
+      <ellipse cx="0" cy="-74" rx="12" ry="4"  fill="#2A6880"/>
+
+      {/* Bouche (bas de l'enveloppe) */}
+      <ellipse cx="0" cy="70" rx="22" ry="7" fill="rgba(20,40,60,0.35)"/>
+
+      {/* ─ Cordes en trapèze ─ */}
+      <line x1="-30" y1="64" x2="-18" y2="96" stroke="#8B6433" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1=" 30" y1="64" x2=" 18" y2="96" stroke="#8B6433" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="-10" y1="70" x2="-8"  y2="96" stroke="#8B6433" strokeWidth="1.3" strokeLinecap="round"/>
+      <line x1=" 10" y1="70" x2=" 8"  y2="96" stroke="#8B6433" strokeWidth="1.3" strokeLinecap="round"/>
+      {/* Anneau de jonction cordes */}
+      <ellipse cx="0" cy="96" rx="19" ry="4" fill="rgba(100,70,30,0.3)"/>
+
+      {/* ─ Nacelle tressée ─ */}
+      <rect x="-19" y="96" width="38" height="28" rx="5" fill="#C8A050"/>
+      {/* Bord supérieur */}
+      <rect x="-21" y="93" width="42" height="6" rx="3" fill="#D8B865"/>
+      {/* Tressage horizontal */}
+      <line x1="-19" y1="108" x2="19" y2="108" stroke="#9A7828" strokeWidth="1.2" opacity="0.5"/>
+      <line x1="-19" y1="116" x2="19" y2="116" stroke="#9A7828" strokeWidth="1"   opacity="0.4"/>
+      {/* Tressage vertical */}
+      {[-13,-6,1,8,14].map(bx => (
+        <line key={bx} x1={bx} y1="99" x2={bx} y2="124" stroke="#9A7828" strokeWidth="1" opacity="0.4"/>
+      ))}
+      {/* Bord inférieur nacelle */}
+      <rect x="-19" y="120" width="38" height="4" rx="2" fill="#B89040"/>
+    </g>
+  );
+}
+
+function Car({ x, y, rotation=0, flipX=false, bodyColor="#E8644A", roofColor="#D4583A", bumperColor="#C44428" }: { x:number; y:number; rotation?:number; flipX?:boolean; bodyColor?:string; roofColor?:string; bumperColor?:string }) {
+  return (
+    <g transform={`translate(${x},${y}) rotate(${rotation}) scale(${flipX ? -1 : 1},1)`}>
+      {/* Ombre */}
+      <ellipse cx="2" cy="15" rx="27" ry="5" fill="rgba(0,0,0,0.14)"/>
+      {/* Carrosserie */}
+      <rect x="-26" y="-6" width="54" height="17" rx="6" fill={bodyColor}/>
+      {/* Toit / habitacle */}
+      <rect x="-14" y="-20" width="30" height="16" rx="6" fill={roofColor}/>
+      {/* Vitres */}
+      <rect x="-12" y="-18" width="12" height="11" rx="2.5" fill="#D6EEFF" opacity="0.88"/>
+      <rect x="2"   y="-18" width="12" height="11" rx="2.5" fill="#D6EEFF" opacity="0.88"/>
+      <line x1="1" y1="-18" x2="1" y2="-7" stroke={bumperColor} strokeWidth="1.5"/>
+      {/* Roues */}
+      <circle cx="-15" cy="11" r="7.5" fill="#242830"/>
+      <circle cx="-15" cy="11" r="4.5" fill="#484E5C"/>
+      <circle cx="-15" cy="11" r="1.5" fill="#B8C0D0"/>
+      <circle cx=" 17" cy="11" r="7.5" fill="#242830"/>
+      <circle cx=" 17" cy="11" r="4.5" fill="#484E5C"/>
+      <circle cx=" 17" cy="11" r="1.5" fill="#B8C0D0"/>
+      {/* Phare avant */}
+      <circle cx="-27" cy="-2" r="3" fill="#FFE090" opacity="0.85"/>
+      {/* Pare-chocs */}
+      <rect x="-30" y="0" width="5" height="9" rx="2.5" fill={bumperColor}/>
+    </g>
+  );
+}
+
+function Convertible({ x, y, rotation=0 }: { x:number; y:number; rotation?:number }) {
+  return (
+    <g transform={`translate(${x},${y}) rotate(${rotation})`}>
+      {/* Ombre longue */}
+      <ellipse cx="2" cy="16" rx="34" ry="4.5" fill="rgba(0,0,0,0.13)"/>
+      {/* Carrosserie basse et longue — ligne de luxe */}
+      <path d="M -32,8 Q -34,-4 -22,-8 L 28,-8 Q 36,-8 34,8 Z" fill="#F5C842"/>
+      {/* Capot plongeant avant */}
+      <path d="M -22,-8 L -32,-4 L -32,2 L -22,2 Z" fill="#E0B030"/>
+      {/* Coffre arrière */}
+      <path d="M 28,-8 L 34,-4 L 34,2 L 26,2 Z" fill="#E0B030"/>
+      {/* Habitacle ouvert décapotable */}
+      <path d="M -10,-8 L -4,-18 L 20,-18 L 24,-8 Z" fill="#D4A020" opacity="0.55"/>
+      {/* Pare-brise incliné */}
+      <path d="M -4,-18 L 0,-22 L 18,-22 L 20,-18 Z" fill="#D6EEFF" opacity="0.85"/>
+      {/* Intérieur — cuir beige luxe */}
+      <path d="M -8,-8 L -2,-16 L 12,-16 L 16,-8 Z" fill="#C8A060" opacity="0.5"/>
+      {/* Appuie-tête conducteur */}
+      <ellipse cx="4" cy="-16" rx="4" ry="3" fill="#B89050" opacity="0.8"/>
+      {/* Ligne chromée latérale */}
+      <line x1="-28" y1="-1" x2="30" y2="-1" stroke="#FFE090" strokeWidth="1" opacity="0.5"/>
+      {/* Roues larges sport */}
+      <circle cx="-18" cy="12" r="8.5" fill="#1A1A22"/>
+      <circle cx="-18" cy="12" r="5.5" fill="#38404E"/>
+      <circle cx="-18" cy="12" r="2"   fill="#C8D0E0"/>
+      <circle cx=" 20" cy="12" r="8.5" fill="#1A1A22"/>
+      <circle cx=" 20" cy="12" r="5.5" fill="#38404E"/>
+      <circle cx=" 20" cy="12" r="2"   fill="#C8D0E0"/>
+      {/* Phares fins LED */}
+      <rect x="-34" y="-5" width="6" height="2.5" rx="1.2" fill="#FFF4C0" opacity="0.95"/>
+      <rect x="-34" y="-2" width="4" height="1.5" rx="0.8" fill="#FFE090" opacity="0.6"/>
+      {/* Calandre */}
+      <rect x="-34" y="1" width="6" height="4" rx="1.5" fill="#C8940A"/>
+    </g>
+  );
+}
+
+// ── Arbres & décors ───────────────────────────────────────────
 function PineTree({ x, y, s=1 }: { x:number; y:number; s?:number }) {
   return (
     <g transform={`translate(${x},${y}) scale(${s})`}>
@@ -133,53 +530,217 @@ function Birds({ x, y, s=1 }: { x:number; y:number; s?:number }) {
     </g>
   );
 }
-function HotelBuilding({ x, y, color }: { x:number; y:number; color:string }) {
+
+// ── Hébergements ──────────────────────────────────────────────
+
+/** Étape 2 — Grand hôtel classique (5 étages, drapeau, auvent) */
+function GrandHotel({ x, y }: { x:number; y:number }) {
   return (
     <g transform={`translate(${x},${y})`}>
-      <ellipse cx="2" cy="14" rx="22" ry="5" fill="rgba(0,0,0,0.08)"/>
-      <rect x="-20" y="-50" width="40" height="64" fill="#EDE8DF" rx="3"/>
-      <rect x="-20" y="-50" width="40" height="6" fill={color} rx="2"/>
-      {[0,1,2].flatMap(row => [-11,3].map(col => (
-        <rect key={`${row}${col}`} x={col} y={-40+row*14} width="8" height="8" fill="#AED6F1" rx="1" opacity="0.9"/>
+      <ellipse cx="2" cy="16" rx="44" ry="8" fill="rgba(0,0,0,0.07)"/>
+      {/* Corps principal */}
+      <rect x="-36" y="-100" width="72" height="116" fill="#F2EBE0" rx="2"/>
+      {/* Bandeau doré en haut */}
+      <rect x="-38" y="-102" width="76" height="10" fill="#F5C842" rx="2"/>
+      <rect x="-38" y="-97" width="76" height="4" fill="rgba(0,0,0,0.06)"/>
+      {/* Mât + drapeau */}
+      <line x1="4" y1="-102" x2="4" y2="-118" stroke="#C0A87A" strokeWidth="1.5"/>
+      <polygon points="4,-118 22,-113 4,-108" fill="#E8644A"/>
+      {/* 5 rangées × 4 fenêtres */}
+      {[0,1,2,3,4].flatMap(row => [-24,-9,6,21].map(col => (
+        <rect key={`w${row}${col}`} x={col} y={-90+row*17} width="9" height="11"
+          fill="#B8D9F0" rx="1" opacity="0.88"/>
       )))}
-      <rect x="-5" y="-2" width="10" height="16" fill="#9B7B5A" rx="1"/>
+      {/* Bandeau RDC */}
+      <rect x="-36" y="-18" width="72" height="2" fill="rgba(0,0,0,0.07)"/>
+      {/* Porte arrondie (rect rx = porte en arche) */}
+      <rect x="-9" y="-16" width="18" height="32" rx="9" fill="#A07850"/>
+      <rect x="-6" y="-13" width="5" height="18" rx="2" fill="rgba(255,255,255,0.18)"/>
+      {/* Fenêtres RDC */}
+      <rect x="-32" y="-15" width="16" height="14" rx="1.5" fill="#B8D9F0" opacity="0.88"/>
+      <rect x="16"  y="-15" width="16" height="14" rx="1.5" fill="#B8D9F0" opacity="0.88"/>
+      {/* Auvent */}
+      <rect x="-13" y="-18" width="26" height="5" rx="2" fill="#E8644A"/>
+      {[0,1,2,3].map(i => (
+        <line key={`s${i}`} x1={-10+i*7} y1="-18" x2={-9+i*7} y2="-13"
+          stroke="white" strokeWidth="1.2" opacity="0.55"/>
+      ))}
     </g>
   );
 }
-function MapPin({ x, y, color, icon }: { x:number; y:number; color:string; icon:string }) {
+
+/** Étape 3 — Petit hôtel / Auberge (2 étages, toit pentu, charme) */
+function SmallHotel({ x, y }: { x:number; y:number }) {
   return (
     <g transform={`translate(${x},${y})`}>
-      <circle cx="0" cy="-10" r="38" fill={color} opacity="0.14"/>
-      <path d="M 0,42 C -5,32 -32,20 -32,-8 A 32,32 0 1,1 32,-8 C 32,20 5,32 0,42 Z"
-        fill={color} stroke="white" strokeWidth="4" strokeLinejoin="round"
-        style={{ filter:`drop-shadow(0 4px 10px ${color}55)` }}/>
-      <circle cx="0" cy="-8" r="21" fill="white"/>
-      <g transform="translate(0,-8)">
-        <PinIcon name={icon as IconName} color={color}/>
-      </g>
+      <ellipse cx="2" cy="12" rx="30" ry="6" fill="rgba(0,0,0,0.07)"/>
+      {/* Corps */}
+      <rect x="-24" y="-54" width="48" height="66" fill="#EDE8DF" rx="2"/>
+      {/* Toit pentu */}
+      <polygon points="-28,-54 0,-80 28,-54" fill="#7A5830"/>
+      <polygon points="-26,-54 0,-77 26,-54" fill="#9B7040"/>
+      {/* Cheminée */}
+      <rect x="10" y="-78" width="7" height="20" rx="1" fill="#6A4A28"/>
+      <rect x="9"  y="-80" width="9" height="4"  rx="1" fill="#5A3A20"/>
+      {/* Fumée */}
+      <circle cx="14" cy="-84" r="3.5" fill="#C8D4E0" opacity="0.45"/>
+      <circle cx="16" cy="-90" r="2.5" fill="#C8D4E0" opacity="0.28"/>
+      {/* Fenêtres étage */}
+      <rect x="-17" y="-44" width="13" height="13" rx="1.5" fill="#B8D9F0" opacity="0.9"/>
+      <rect x="4"   y="-44" width="13" height="13" rx="1.5" fill="#B8D9F0" opacity="0.9"/>
+      {/* Bacs à fleurs */}
+      <rect x="-17" y="-32" width="13" height="3" rx="1" fill="#7B5533"/>
+      <rect x="4"   y="-32" width="13" height="3" rx="1" fill="#7B5533"/>
+      {[...Array(4)].map((_,i) => <circle key={i} cx={-14+i*4} cy="-33" r="2" fill="#E8644A" opacity="0.8"/>)}
+      {[...Array(4)].map((_,i) => <circle key={i} cx={7+i*4}  cy="-33" r="2" fill="#E8644A" opacity="0.8"/>)}
+      {/* Porte */}
+      <rect x="-6" y="-12" width="12" height="24" rx="1" fill="#9B7B5A"/>
+      <circle cx="4" cy="2" r="1.5" fill="#C8A87A"/>
+      {/* Fenêtres RDC */}
+      <rect x="-21" y="-18" width="11" height="11" rx="1.5" fill="#B8D9F0" opacity="0.9"/>
+      <rect x="10"  y="-18" width="11" height="11" rx="1.5" fill="#B8D9F0" opacity="0.9"/>
+      {/* Enseigne */}
+      <rect x="-16" y="-57" width="32" height="6" rx="2" fill="#5A8A5E"/>
     </g>
   );
 }
-function StepCard({ step, x, y, align }: { step:typeof STEPS[0]; x:number; y:number; align:"left"|"right" }) {
-  const w=178, h=64, cx=align==="right"?x+46:x-46-w, cy=y-h/2;
+
+/** Étape 4 — Roulotte vintage (hébergement original) */
+function Roulotte({ x, y }: { x:number; y:number }) {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <ellipse cx="0" cy="22" rx="42" ry="8" fill="rgba(0,0,0,0.09)"/>
+      {/* Corps arrondi */}
+      <rect x="-36" y="-44" width="72" height="66" rx="14" fill="#6FA8C0"/>
+      {/* Toit bombé */}
+      <rect x="-38" y="-54" width="76" height="18" rx="9" fill="#4A88A0"/>
+      {/* Reflet toit */}
+      <rect x="-32" y="-52" width="50" height="6" rx="3" fill="rgba(255,255,255,0.14)"/>
+      {/* Panneau corps */}
+      <rect x="-30" y="-38" width="60" height="44" rx="10" fill="rgba(255,255,255,0.1)"/>
+      {/* Porte */}
+      <rect x="-8" y="-18" width="16" height="40" rx="4" fill="#3A6880"/>
+      <rect x="-8" y="-18" width="16" height="18" rx="4" fill="#4A98B0" opacity="0.3"/>
+      <circle cx="5" cy="8" r="2.5" fill="#FFD166"/>
+      {/* Fenêtres */}
+      <rect x="-30" y="-32" width="17" height="15" rx="3" fill="#B8D9F0" opacity="0.85"/>
+      <line x1="-22" y1="-32" x2="-22" y2="-17" stroke="#4A88A0" strokeWidth="1"/>
+      <line x1="-30" y1="-25" x2="-13" y2="-25" stroke="#4A88A0" strokeWidth="1"/>
+      <rect x="13"  y="-32" width="17" height="15" rx="3" fill="#B8D9F0" opacity="0.85"/>
+      <line x1="21" y1="-32" x2="21"  y2="-17" stroke="#4A88A0" strokeWidth="1"/>
+      <line x1="13" y1="-25" x2="30"  y2="-25" stroke="#4A88A0" strokeWidth="1"/>
+      {/* Marches */}
+      <rect x="-6"  y="22" width="12" height="4" rx="1" fill="#3A6880"/>
+      <rect x="-8"  y="26" width="16" height="4" rx="1" fill="#306070"/>
+      {/* Roues */}
+      <circle cx="-22" cy="22" r="13" fill="#2A3848"/>
+      <circle cx="-22" cy="22" r="8"  fill="#3A4858"/>
+      <circle cx="-22" cy="22" r="3"  fill="#FFD166"/>
+      {[-1,1].flatMap((sx,i) => [-1,1].map((sy,j) => (
+        <line key={`sp${i}${j}`} x1={-22} y1={22} x2={-22+sx*8} y2={22+sy*8}
+          stroke="#2A3848" strokeWidth="2" opacity="0.5"/>
+      )))}
+      <circle cx="22"  cy="22" r="13" fill="#2A3848"/>
+      <circle cx="22"  cy="22" r="8"  fill="#3A4858"/>
+      <circle cx="22"  cy="22" r="3"  fill="#FFD166"/>
+      {/* Détails décoratifs */}
+      <circle cx="-30" cy="-44" r="5" fill="#FFD166" opacity="0.5"/>
+      <circle cx="-22" cy="-50" r="3.5" fill="#FFD166" opacity="0.32"/>
+      <circle cx="28"  cy="-48" r="4" fill="#FFD166" opacity="0.38"/>
+    </g>
+  );
+}
+
+// ── Icône étape (cercle simple, sans pin) ─────────────────────
+function StepCircle({ x, y, color, icon }: { x:number; y:number; color:string; icon:string }) {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {/* Glow externe */}
+      <circle cx="0" cy="0" r={ICON_R+8} fill={color} opacity="0.1"/>
+      {/* Cercle principal */}
+      <circle cx="0" cy="1" r={ICON_R} fill={color} opacity="0.18"/>
+      <circle cx="0" cy="0" r={ICON_R} fill={color}
+        style={{ filter:`drop-shadow(0 4px 12px ${color}66)` }}/>
+      {/* Fond blanc */}
+      <circle cx="0" cy="0" r={ICON_R-5} fill="white"/>
+      {/* Icône */}
+      <PinIcon name={icon as IconName} color={color}/>
+    </g>
+  );
+}
+
+function StepCard({
+  step, x, y, align, isHovered, onHover, onLeave, cardYOffset=0,
+}: {
+  step: typeof STEPS[0]; x: number; y: number; align: "left"|"right";
+  isHovered: boolean; onHover: () => void; onLeave: () => void; cardYOffset?: number;
+}) {
+  // ── Carte compacte ────────────────────────────────────────
+  const cw = 168, ch = 40;
+  const cx = align === "right" ? x + ICON_R + 14 : x - ICON_R - 14 - cw;
+  const cy = (y + cardYOffset) - ch / 2;
+
+  // ── Carte détail glassmorphisme ─────────────────────────
+  // Suffisamment grande pour contenir la description sans débordement
+  const dw = 205, dh = 72;
+  const dx = align === "right" ? cx + cw + 12 : cx - dw - 12;
+  const dy = cy - (dh - ch) / 2; // alignement vertical centré
+
+  // Split ≤ 42 chars/ligne → 2 lignes pour toutes les descriptions
   const words = step.desc.split(" ");
-  let line1="", line2="";
+  const lines: string[] = [];
+  let cur = "";
   for (const word of words) {
-    if ((line1+" "+word).trim().length<=38) line1=(line1+" "+word).trim();
-    else line2=(line2+" "+word).trim();
+    if ((cur + " " + word).trim().length <= 42) cur = (cur + " " + word).trim();
+    else { lines.push(cur); cur = word; }
   }
+  if (cur) lines.push(cur);
+
+  // Hauteur réelle du texte → centrage vertical dans la carte détail
+  const lineH = 14;
+  const textBlockH = lines.length * lineH;
+  const textStartY = dy + (dh - textBlockH) / 2 + lineH - 3;
+
   return (
     <g>
-      <line x1={align==="right"?x+32:x-32} y1={y} x2={align==="right"?x+46:x-46} y2={y}
-        stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeDasharray="3,3"/>
-      <rect x={cx} y={cy} width={w} height={h} rx="12" fill="rgba(255,255,255,0.93)"
-        style={{ filter:"drop-shadow(0 3px 10px rgba(0,0,0,0.08))" }}/>
-      <rect x={cx+8} y={cy+8} width={20} height={12} rx="5" fill={step.color} opacity="0.15"/>
-      <text x={cx+18} y={cy+17} textAnchor="middle" fontFamily="'Nunito',sans-serif" fontWeight="900" fontSize="6.5" fill={step.color}>{step.number}</text>
-      <text x={cx+34} y={cy+18} fontFamily="'Nunito',sans-serif" fontWeight="800" fontSize="8" fill="#1E1E2E">{step.title}</text>
-      <line x1={cx+8} y1={cy+25} x2={cx+w-8} y2={cy+25} stroke="rgba(0,0,0,0.06)" strokeWidth="0.8"/>
-      <text x={cx+8} y={cy+37} fontFamily="system-ui,sans-serif" fontSize="6.5" fill="#6B7280">{line1}</text>
-      {line2 && <text x={cx+8} y={cy+48} fontFamily="system-ui,sans-serif" fontSize="6.5" fill="#6B7280">{line2}</text>}
+      {/* Connecteur tirets */}
+      <line
+        x1={align === "right" ? x + ICON_R : x - ICON_R} y1={y}
+        x2={align === "right" ? x + ICON_R + 14 : x - ICON_R - 14} y2={y + cardYOffset}
+        stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeDasharray="3,3"/>
+
+      {/* ── Carte détail — glassmorphisme ── */}
+      <g style={{ opacity: isHovered ? 1 : 0, transition: "opacity 0.22s ease", pointerEvents: "none" }}>
+        <rect x={dx} y={dy} width={dw} height={dh} rx="14"
+          fill="rgba(255,255,255,0.75)"
+          stroke="rgba(255,255,255,0.8)" strokeWidth="1.2"
+          style={{ filter: "drop-shadow(0 6px 24px rgba(0,0,0,0.10))" }}/>
+        {/* Accent couleur */}
+        <rect x={dx+14} y={dy+11} width={22} height={3} rx="1.5" fill={step.color} opacity="0.55"/>
+        {/* Texte centré verticalement */}
+        {lines.map((line, i) => (
+          <text key={i} x={dx+14} y={textStartY + i * lineH}
+            fontFamily="system-ui,sans-serif" fontSize="7.5" fill="#4B5563">{line}</text>
+        ))}
+      </g>
+
+      {/* ── Carte compacte ── */}
+      <g onMouseEnter={onHover} onMouseLeave={onLeave} style={{ cursor: "default" }}>
+        <rect x={cx} y={cy} width={cw} height={ch} rx="12"
+          fill={isHovered ? "rgba(255,255,255,0.98)" : "rgba(255,255,255,0.93)"}
+          style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.08))", transition: "all 0.18s" }}/>
+        {/* Badge numéro — centré verticalement */}
+        <rect x={cx+10} y={cy+10} width={22} height={20} rx="6" fill={step.color} opacity="0.12"/>
+        <text x={cx+21} y={cy+22.5} textAnchor="middle"
+          fontFamily="'Nunito',sans-serif" fontWeight="900" fontSize="7" fill={step.color}>
+          {step.number}
+        </text>
+        {/* Titre — centré verticalement */}
+        <text x={cx+38} y={cy+22.5}
+          fontFamily="'Nunito',sans-serif" fontWeight="800" fontSize="8" fill="#1E1E2E">
+          {step.title}
+        </text>
+      </g>
     </g>
   );
 }
@@ -187,6 +748,7 @@ function StepCard({ step, x, y, align }: { step:typeof STEPS[0]; x:number; y:num
 // ── Composant principal ───────────────────────────────────────
 export default function TutorialRoute({ hideHeader=false, hideStepCards=false }: { hideHeader?:boolean; hideStepCards?:boolean }) {
   const [maskPoly, setMaskPoly] = useState<string>("");
+  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
   useEffect(() => {
     function update() {
@@ -201,6 +763,8 @@ export default function TutorialRoute({ hideHeader=false, hideStepCards=false }:
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  const cutR = ICON_R + 6; // rayon de découpe route autour de chaque icône
 
   return (
     <section style={{ background:"#D6EEFF", padding:hideHeader?"0":"80px 0 0", overflow:"hidden" }}>
@@ -225,16 +789,20 @@ export default function TutorialRoute({ hideHeader=false, hideStepCards=false }:
             <filter id="crackEdge" x="-10%" y="-10%" width="120%" height="120%">
               <feGaussianBlur stdDeviation="2"/>
             </filter>
-            {maskPoly && (
-              <mask id="titleMask">
-                <rect x="0" y="0" width="800" height="1540" fill="white"/>
-                <polygon points={maskPoly} fill="black" filter="url(#crackEdge)"/>
-              </mask>
-            )}
+            {/* Masque route : découpe autour de chaque icône uniquement (pas le titre) */}
+            <mask id="roadMask">
+              <rect x="0" y="0" width="800" height="1540" fill="white"/>
+              {PINS.map((pin, i) => (
+                <circle key={i} cx={pin.x} cy={pin.y} r={cutR} fill="black"/>
+              ))}
+            </mask>
           </defs>
 
           {/* Fond */}
           <rect x="0" y="0" width="800" height="1540" fill="url(#skyGrad)"/>
+
+          {/* Soleil — haut gauche, route à x=630+ ici */}
+          <Sun x={148} y={195} s={0.9}/>
 
           {/* Nuages */}
           <Cloud x={130} y={52}  s={1.05} op={0.88}/>
@@ -252,6 +820,9 @@ export default function TutorialRoute({ hideHeader=false, hideStepCards=false }:
           <Birds x={650} y={660} s={0.9}/>
           <Birds x={100} y={1050} s={0.8}/>
 
+          {/* Montgolfière — posée sur le grand arc de la route (haut de l'ovale) */}
+          <HotAirBalloon x={490} y={870}/>
+
           {/* Arbres */}
           <PineTree  x={750} y={380} s={0.88}/>
           <RoundTree x={738} y={470} s={0.80}/>
@@ -262,8 +833,8 @@ export default function TutorialRoute({ hideHeader=false, hideStepCards=false }:
           <PineTree  x={750} y={1200} s={0.82}/>
           <RoundTree x={738} y={1300} s={0.74}/>
 
-          {/* Route */}
-          <g mask={maskPoly ? "url(#titleMask)" : undefined}>
+          {/* Route — masquée autour des icônes et du titre */}
+          <g mask="url(#roadMask)">
             <path d={ROAD_PATH} fill="none" stroke="rgba(160,50,20,0.16)" strokeWidth="34"
               strokeLinecap="round" strokeLinejoin="round" transform="translate(2,5)"/>
             <path d={ROAD_PATH} fill="none" stroke="#E8644A" strokeWidth="28"
@@ -272,17 +843,29 @@ export default function TutorialRoute({ hideHeader=false, hideStepCards=false }:
               strokeLinecap="round" strokeDasharray="20,15" opacity="0.82"/>
           </g>
 
-          {/* Hôtels */}
-          {HOTELS.map((h,i) => <HotelBuilding key={i} {...h}/>)}
+          {/* Voiture orange — milieu route, segment 2 (t≈0.35 : x=595, y=628, angle 150°) */}
+          <Car x={595} y={658} rotation={150} flipX={true}/>
 
-          {/* Cards */}
-          {!hideStepCards && PINS.map((pin,i) => (
-            <StepCard key={i} step={STEPS[i]} x={pin.x} y={pin.y} align={cardAligns[i]}/>
+          {/* Décapotable jaune — milieu du rond (côté droit, x≈290, y≈840) */}
+          <Convertible x={108} y={840} rotation={270}/>
+
+          {/* Voiture bleue — entre étape 3 et 4 */}
+          <Car x={420} y={1148} rotation={10} flipX={true} bodyColor="#6FA8C0" roofColor="#5A90A8" bumperColor="#4A7890"/>
+
+          {/* Cards d'étape */}
+          {!hideStepCards && PINS.map((pin, i) => (
+            <StepCard
+              key={i} step={STEPS[i]} x={pin.x} y={pin.y} align={cardAligns[i]}
+              isHovered={hoveredStep === i}
+              onHover={() => setHoveredStep(i)}
+              onLeave={() => setHoveredStep(null)}
+              cardYOffset={i === 0 ? -60 : 0}
+            />
           ))}
 
-          {/* Pins */}
+          {/* Icônes étapes (sans pin) */}
           {PINS.map((pin,i) => (
-            <MapPin key={i} x={pin.x} y={pin.y} color={STEPS[i].color} icon={STEPS[i].icon}/>
+            <StepCircle key={i} x={pin.x} y={pin.y} color={STEPS[i].color} icon={STEPS[i].icon}/>
           ))}
         </svg>
       </div>

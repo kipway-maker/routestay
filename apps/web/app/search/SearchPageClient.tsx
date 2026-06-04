@@ -536,36 +536,57 @@ export default function SearchPageClient() {
             </div>
 
             {/* Filtres rapides */}
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               {([
                 {
-                  key: "ev", label: "⚡ Borne EV", active: filters.evOnly,
+                  key: "ev",
+                  icon: (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                  ),
+                  label: "Borne EV", active: filters.evOnly,
                   toggle: () => setFilters((f) => ({ ...f, evOnly: !f.evOnly })),
                 },
                 {
-                  key: "24h", label: "🌙 Accueil 24h", active: filterReception24h,
+                  key: "24h",
+                  icon: (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                  ),
+                  label: "Accueil 24h", active: filterReception24h,
                   toggle: () => setFilterReception24h((v) => !v),
                 },
                 {
-                  key: "nodetour", label: "↗ Sans détour", active: filters.maxDetourMin === 5,
+                  key: "nodetour",
+                  icon: (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                  ),
+                  label: "Sans détour", active: filters.maxDetourMin === 5,
                   toggle: () => setFilters((f) => ({ ...f, maxDetourMin: f.maxDetourMin === 5 ? null : 5 })),
                 },
-              ] as { key: string; label: string; active: boolean; toggle: () => void }[]).map((item) => (
+              ] as { key: string; icon: React.ReactNode; label: string; active: boolean; toggle: () => void }[]).map((item) => (
                 <button
                   key={item.key}
                   onClick={item.toggle}
                   style={{
-                    padding: "8px 16px", borderRadius: "24px",
-                    border: item.active ? "1.5px solid #E8644A" : "1px solid rgba(255,255,255,0.65)",
-                    background: item.active ? "#E8644A" : "rgba(255,255,255,0.50)",
-                    backdropFilter: "blur(16px)",
-                    WebkitBackdropFilter: "blur(16px)",
-                    color: item.active ? "#FFFFFF" : "#374151",
-                    fontSize: "13px", fontWeight: 700, cursor: "pointer",
+                    display: "inline-flex", alignItems: "center", gap: "5px",
+                    padding: "5px 12px", borderRadius: "20px",
+                    border: item.active ? "1px solid #E8644A" : "1px solid rgba(0,0,0,0.10)",
+                    background: item.active ? "#E8644A" : "rgba(255,255,255,0.70)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    color: item.active ? "#FFFFFF" : "#4B5563",
+                    fontSize: "12px", fontWeight: 500, cursor: "pointer",
                     transition: "all 0.15s", whiteSpace: "nowrap",
-                    boxShadow: item.active ? "0 3px 12px rgba(232,100,74,0.35)" : "inset 0 1px 0 rgba(255,255,255,0.8)",
+                    boxShadow: item.active ? "0 2px 8px rgba(232,100,74,0.25)" : "0 1px 3px rgba(0,0,0,0.06)",
+                    letterSpacing: "0.01em",
                   }}
                 >
+                  {item.icon}
                   {item.label}
                 </button>
               ))}
