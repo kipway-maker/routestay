@@ -1,67 +1,112 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const TYPE_LABEL: Record<string, string> = {
+  municipality:             "Ville",
+  municipal_district:       "Ville",
+  locality:                 "Lieu",
+  neighbourhood:            "Quartier",
+  place:                    "Lieu",
+  county:                   "Département",
+  subregion:                "Sous-région",
+  region:                   "Région",
+  address:                  "Adresse",
+  road:                     "Rue",
+  poi:                      "Point d'intérêt",
+  joint_municipality:       "Commune",
+  joint_submunicipality:    "Commune",
+};
+
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams.get("q");
+  const q = req.nextUrl.searchParams.get("q")?.trim();
   if (!q || q.length < 2) return NextResponse.json([]);
 
-  // Fetch more results than needed so deduplication still leaves enough
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=12&addressdetails=1&accept-language=fr&countrycodes=fr`;
-  const res = await fetch(url, { headers: { "User-Agent": "KipWay/1.0" } });
-  const data = await res.json();
+  const key = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
+  if (!key) return NextResponse.json([]);
 
-  const seen = new Set<string>();
+  // Détecte si la query ressemble à une adresse (contient mot de voie)
+  const VOIE = /\b(rue|avenue|av\.|boulevard|bd|allée|chemin|impasse|place|route|passage|square|cité|villa|hameau|lieu[- ]dit)\b/i;
+  const isAddress = VOIE.test(q);
 
-  const results = data
-    .map((item: any) => {
-      const a = item.address ?? {};
-      const type = item.type ?? item.class ?? "";
+  const types = isAddress
+    // Requête adresse : prioriser rues + adresses, garder les villes pour fallback
+    ? "address,road,municipality,municipal_district,locality,neighbourhood,place"
+    // Requête ville : villes, communes, départements, régions
+    : "municipality,municipal_district,joint_municipality,joint_submunicipality,locality,county,subregion,region,place";
 
-      // ── Rue / adresse ──────────────────────────────────────
-      const hasRoad = !!(a.road ?? a.pedestrian ?? a.footway ?? a.path);
-      if (hasRoad) {
-        const road = a.road ?? a.pedestrian ?? a.footway ?? a.path ?? "";
-        const houseNum = a.house_number ? `${a.house_number} ` : "";
-        const city = a.city ?? a.town ?? a.village ?? a.municipality ?? "";
-        const dept = a.county ?? a.state_district ?? "";
-        const sub = [city, dept].filter(Boolean).join(", ");
+  const url = [
+    `https://api.maptiler.com/geocoding/${encodeURIComponent(q)}.json`,
+    `?key=${key}`,
+    `&language=fr`,
+    `&limit=8`,
+    `&types=${types}`,
+    // Biais vers la France (centre ~2.3,46.5) sans restreindre à la France
+    `&proximity=2.3,46.5`,
+  ].join("");
+
+  try {
+    const res = await fetch(url, { next: { revalidate: 0 } });
+    if (!res.ok) return NextResponse.json([]);
+    const data = await res.json();
+
+    const seen = new Set<string>();
+
+    const results = (data.features ?? [])
+      .map((f: any) => {
+        const name: string = f.text_fr ?? f.text ?? f.properties?.name ?? "";
+        const ctx: any[] = f.context ?? [];
+        const type = (f.place_type ?? [])[0] ?? "place";
+
+        // Extraire ville + département depuis le tableau context structuré
+        const city = ctx.find((c: any) =>
+          c.id?.startsWith("municipality.") ||
+          c.id?.startsWith("municipal_district.") ||
+          c.id?.startsWith("locality.")
+        )?.text_fr;
+
+        const dept = ctx.find((c: any) =>
+          c.id?.startsWith("county.")
+        )?.text_fr;
+
+        // Pays pour le tri
+        const countryCode: string =
+          ctx.find((c: any) => c.id?.startsWith("country."))?.country_code ?? "xx";
+
+        // Pour les villes/communes, le contexte utile est le département
+        const isCity = type === "municipality" || type === "municipal_district" ||
+                       type === "joint_municipality" || type === "locality";
+        const subtitle = isCity
+          ? [dept].filter(p => p && p !== name).join(", ")
+          : [city, dept].filter(p => p && p !== name).join(", ");
+
         return {
-          name: sub ? `${houseNum}${road}, ${sub}` : `${houseNum}${road}`,
-          lat: parseFloat(item.lat),
-          lng: parseFloat(item.lon),
-          _type: "address",
+          name,
+          subtitle,
+          lat: f.geometry.coordinates[1],
+          lng: f.geometry.coordinates[0],
+          type: TYPE_LABEL[type] ?? "Lieu",
+          _cc: countryCode, // pour le tri, retiré avant retour
         };
-      }
+      })
+      // Dédupliquer par nom identique
+      .filter((item: any) => {
+        const key = item.name.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      // France + pays européens proches en tête
+      .sort((a: any, b: any) => {
+        const PRIO: Record<string, number> = { fr: 0, be: 1, ch: 2, lu: 3, mc: 3, es: 4, it: 4, de: 4, nl: 5 };
+        const av = PRIO[a._cc] ?? 99;
+        const bv = PRIO[b._cc] ?? 99;
+        return av - bv;
+      })
+      // Retirer le champ interne _cc avant de renvoyer
+      .map(({ _cc: _, ...rest }: any) => rest)
+      .slice(0, 6);
 
-      // ── Ville / commune ───────────────────────────────────
-      const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.hamlet ?? item.name;
-      const dept = a.county ?? a.state_district ?? "";
-      // For city-level results, only show dept (not the full region) to keep it short and distinct
-      const sub = dept || (a.state ?? "");
-      return {
-        name: sub ? `${city}, ${sub}` : city,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-        _type: type,
-      };
-    })
-    // Relevance guard: the primary label (before first comma) must contain
-    // at least one word from the query — filters out OSM results that match
-    // "Paris" deep in their address hierarchy but have an unrelated primary name
-    .filter((item: any) => {
-      const label = item.name.split(",")[0].toLowerCase().trim();
-      const words = q.toLowerCase().trim().split(/\s+/).filter((w: string) => w.length >= 2);
-      return words.some((w: string) => label.includes(w));
-    })
-    // Deduplicate: same name → keep only first occurrence
-    .filter((item: any) => {
-      const key = item.name.trim().toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    // Remove internal _type field before returning
-    .map(({ _type: _, ...rest }: any) => rest)
-    .slice(0, 6);
-
-  return NextResponse.json(results);
+    return NextResponse.json(results);
+  } catch {
+    return NextResponse.json([]);
+  }
 }

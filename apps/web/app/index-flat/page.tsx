@@ -31,8 +31,28 @@ export default function IndexFlat() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-kipway-v2.png" alt="KipWay" style={{ height: "56px", width: "auto", mixBlendMode: "multiply" }} />
+        {/* Logo : maison sur route + flèche */}
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
+          <svg width="50" height="36" viewBox="0 0 50 36" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+            {/* Route line */}
+            <line x1="2" y1="29" x2="35" y2="29" stroke="#E8644A" strokeWidth="4.5" strokeLinecap="round"/>
+            {/* Arrow head */}
+            <path d="M 33,24 L 42,29 L 33,34" fill="none" stroke="#E8644A" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"/>
+            {/* House roof */}
+            <path d="M 8,22 L 18,9 L 28,22 Z" fill="#E8644A"/>
+            {/* House body */}
+            <rect x="9" y="22" width="18" height="7" rx="1.5" fill="#E8644A"/>
+            {/* Window */}
+            <rect x="14" y="24" width="8" height="5" rx="1" fill="white" opacity="0.9"/>
+          </svg>
+          <span style={{
+            fontFamily: "var(--font-nunito,'Nunito'),sans-serif",
+            fontWeight: 900,
+            fontSize: "20px",
+            color: "#1E1E2E",
+            letterSpacing: "-0.3px",
+          }}>Kip<span style={{ color: "#E8644A" }}>Way</span></span>
+        </a>
       </header>
 
       {/* ── ROUTE : démarre dès le top (pin 01 visible au-dessus de l'input)
@@ -74,7 +94,7 @@ export default function IndexFlat() {
             marginBottom: "28px",
             pointerEvents: "none",
           }}>
-            Entrez départ et arrivée. La route s&apos;affiche, les hôtels avec.
+            Entrez deux villes. La route s&apos;affiche, les hôtels avec.
           </p>
           {/* Search bar — pointerEvents réactivés */}
           <div style={{ width: "100%", maxWidth: "860px", pointerEvents: "all" }}>
