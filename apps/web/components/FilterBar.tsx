@@ -13,9 +13,8 @@ export interface Filters {
   sources: HotelSource[];
 }
 
-// Hotels.com retiré du défaut (Hotels4 API RapidAPI hors service)
 export const ALL_SOURCES: HotelSource[] = ["hotels_com", "booking", "tripadvisor"];
-export const ACTIVE_SOURCES: HotelSource[] = ["booking", "tripadvisor"];
+export const ACTIVE_SOURCES: HotelSource[] = ["hotels_com", "booking", "tripadvisor"];
 
 export const DEFAULT_FILTERS: Filters = {
   maxPrice: null,

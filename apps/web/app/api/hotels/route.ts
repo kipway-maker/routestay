@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchHotelsViaBooking } from "@/lib/booking-rapidapi";
 import { searchHotelsViaTripAdvisor } from "@/lib/tripadvisor-rapidapi";
+import { searchHotelsViaHotelsCom } from "@/lib/hotels-rapidapi";
 import { searchHotelsViaOverpass } from "@/lib/overpass";
 // searchHotelsAlongRoute (mock) supprimé — coordonnées fictives trop trompeuses
 import { getCheckDates } from "@/lib/affiliate";
@@ -53,8 +54,13 @@ export async function POST(req: NextRequest) {
   const tasks: Promise<Hotel[]>[] = [];
 
   if (process.env.RAPIDAPI_KEY) {
-    // Hotels4 (Hotels.com) — API v2 cassée côté RapidAPI, désactivée temporairement
-    // if (activeSources.includes("hotels_com")) { ... }
+    // Hotels.com via Hotels4 API v3 (endpoints v3 fonctionnels)
+    if (activeSources.includes("hotels_com")) {
+      tasks.push(
+        searchHotelsViaHotelsCom(points, checkIn, checkOut)
+          .catch((e) => { console.error("[HotelsCom]", e); return []; })
+      );
+    }
 
     if (activeSources.includes("booking")) {
       tasks.push(
