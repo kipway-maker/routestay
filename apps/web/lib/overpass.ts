@@ -111,7 +111,10 @@ export async function searchHotelsViaOverpass(
     const res = await fetch(OVERPASS_URL, {
       method: "POST",
       body: `data=${encodeURIComponent(query)}`,
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "KipWay/1.0 (road-trip hotel finder; contact@kipway.fr)",
+      },
       next: { revalidate: 3600 }, // cache 1h côté Next.js
     });
     if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`);
