@@ -48,11 +48,12 @@ const ACCOM_TABS = [
 ] as const;
 
 function getGridCols(pct: number): string {
-  if (pct < 32) return "1fr";
-  if (pct < 46) return "1fr 1fr";
-  if (pct < 62) return "repeat(3, 1fr)";
-  if (pct < 74) return "repeat(4, 1fr)";
-  return "repeat(5, 1fr)";
+  // minmax(0, 1fr) au lieu de 1fr pour éviter que le texte "nowrap" force les colonnes à déborder
+  if (pct < 32) return "minmax(0, 1fr)";
+  if (pct < 46) return "repeat(2, minmax(0, 1fr))";
+  if (pct < 62) return "repeat(3, minmax(0, 1fr))";
+  if (pct < 74) return "repeat(4, minmax(0, 1fr))";
+  return "repeat(5, minmax(0, 1fr))";
 }
 
 function activeFilterCount(f: Filters): number {
@@ -641,7 +642,7 @@ export default function SearchPageClient() {
         </div>
 
         {/* Grille */}
-        <div className="scroll-stable" style={{ flex: 1, overflowY: "auto", padding: "0 16px 20px" }}>
+        <div className="scroll-stable" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 16px 20px", minWidth: 0 }}>
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
