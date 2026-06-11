@@ -118,6 +118,18 @@ export default function HotelPanel({ hotels, loading, selectedHotelId, onSelect 
           ))
         )}
       </div>
+
+      {/* Mention affilié — obligation légale France */}
+      <div style={{
+        flexShrink: 0,
+        padding: "10px 16px",
+        borderTop: "1px solid rgba(0,0,0,0.07)",
+        background: "#F8F7F4",
+      }}>
+        <p style={{ fontSize: "11px", color: "#9CA3AF", lineHeight: 1.5, margin: 0 }}>
+          🔗 Liens partenaires — KipWay peut percevoir une commission si vous réservez via ces liens, sans surcoût pour vous.
+        </p>
+      </div>
     </div>
   );
 }

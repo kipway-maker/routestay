@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Hotel } from "@/lib/amadeus";
+import { buildHotelsAffiliateUrl, getCheckDates } from "@/lib/affiliate";
+import { SOURCE_META } from "@/components/FilterBar";
 
 interface Props {
   hotel: Hotel;
@@ -21,11 +23,6 @@ function timeToMin(t: string): number {
   return h * 60 + m;
 }
 
-function addDayToDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().split("T")[0];
-}
 
 export default function HotelDetailOverlay({ hotel, estimatedArrival, departureDate, onClose }: Props) {
   const photos = hotel.images?.length ? hotel.images : [hotel.imageUrl];
@@ -38,17 +35,28 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
     timeToMin(estimatedArrival) > timeToMin(hotel.checkinDeadline)
   );
 
-  // Build Booking URL with checkin/checkout if date is set
-  let bookingUrl = hotel.bookingUrl || "";
-  if (!bookingUrl) {
-    const baseSearch = `https://www.booking.com/search.html?ss=${encodeURIComponent(hotel.name + ", " + hotel.city)}`;
-    if (departureDate) {
-      const checkout = addDayToDate(departureDate);
-      bookingUrl = `${baseSearch}&checkin=${departureDate}&checkout=${checkout}&group_adults=1&no_rooms=1`;
-    } else {
-      bookingUrl = baseSearch;
-    }
-  }
+  // Utilise le lien affilié propre à la source de l'hôtel.
+  // Si absent (ex: OSM/mock), fallback vers Hotels.com CJ.
+  const { checkIn, checkOut } = getCheckDates(departureDate);
+  const fallbackUrl = buildHotelsAffiliateUrl({
+    name: hotel.name,
+    city: hotel.city,
+    lat: hotel.lat,
+    lng: hotel.lng,
+    checkIn,
+    checkOut,
+  });
+  const bookingUrl = hotel.bookingUrl ?? fallbackUrl;
+
+  // Label du CTA selon la source
+  const SOURCE_CTA: Record<string, string> = {
+    booking:     "Booking.com",
+    tripadvisor: "TripAdvisor",
+    hotels_com:  "Hotels.com",
+    osm:         "Booking.com",  // OSM → lien Booking.com (trouve la fiche exacte)
+    mock:        "Booking.com",
+  };
+  const ctaSource = SOURCE_CTA[hotel.source ?? "osm"] ?? "Booking.com";
 
   async function handleShare() {
     const arrivalPart = estimatedArrival ? ` nous fait arriver à ${estimatedArrival}` : "";
@@ -179,8 +187,18 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
             >×</button>
           </div>
 
-          {/* EV Badge */}
+          {/* Badges */}
           <div style={{ position: "absolute", top: "14px", left: "14px", display: "flex", gap: "6px" }}>
+            {/* Badge source */}
+            {hotel.source && SOURCE_META[hotel.source as keyof typeof SOURCE_META] && (
+              <span style={{
+                background: SOURCE_META[hotel.source as keyof typeof SOURCE_META].color,
+                color: "#fff", fontSize: "11px", fontWeight: 700,
+                padding: "4px 10px", borderRadius: "20px",
+              }}>
+                {SOURCE_META[hotel.source as keyof typeof SOURCE_META].label}
+              </span>
+            )}
             {hotel.hasEVCharger && (
               <span style={{
                 background: "#06D6A0", color: "#fff",
@@ -240,36 +258,45 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
               </span>
             </div>
 
-            {hotel.checkinDeadline && (
-              <div style={{
-                background: isLate ? "rgba(255,209,102,0.15)" : "#F8F7F4",
-                borderRadius: "14px", padding: "14px",
-                border: isLate ? "1px solid rgba(255,209,102,0.5)" : "none",
-                display: "flex", flexDirection: "column", gap: "4px",
-              }}>
-                <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                  Check-in max
-                </span>
-                <span style={{ fontSize: "18px", fontWeight: 800, color: isLate ? "#D97706" : "#1E1E2E" }}>
-                  {hotel.checkinDeadline}
-                </span>
-                {estimatedArrival && (
-                  <span style={{ fontSize: "11px", color: isLate ? "#D97706" : "#06D6A0", fontWeight: 600 }}>
-                    {isLate ? "⚠️" : "✓"} Arrivée ~{estimatedArrival}
+            {/* Check-in */}
+            <div style={{
+              background: hotel.checkinDeadline ? (isLate ? "rgba(255,209,102,0.15)" : "#F8F7F4") : "#F8F7F4",
+              borderRadius: "14px", padding: "14px",
+              border: isLate ? "1px solid rgba(255,209,102,0.5)" : "none",
+              display: "flex", flexDirection: "column", gap: "4px",
+            }}>
+              <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>
+                Check-in max
+              </span>
+              {hotel.checkinDeadline ? (
+                <>
+                  <span style={{ fontSize: "18px", fontWeight: 800, color: isLate ? "#D97706" : "#1E1E2E" }}>
+                    {hotel.checkinDeadline}
                   </span>
-                )}
-              </div>
-            )}
+                  {estimatedArrival && (
+                    <span style={{ fontSize: "11px", color: isLate ? "#D97706" : "#06D6A0", fontWeight: 600 }}>
+                      {isLate ? "⚠️" : "✓"} Arrivée ~{estimatedArrival}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span style={{ fontSize: "13px", color: "#9CA3AF", fontStyle: "italic" }}>Non communiqué</span>
+              )}
+            </div>
 
-            {hotel.hasEVCharger && (
-              <div style={{
-                background: "rgba(6,214,160,0.08)", borderRadius: "14px", padding: "14px",
-                display: "flex", flexDirection: "column", gap: "4px",
-              }}>
-                <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Recharge EV</span>
-                <span style={{ fontSize: "18px", fontWeight: 800, color: "#06D6A0" }}>+20 min</span>
-              </div>
-            )}
+            {/* Borne EV */}
+            <div style={{
+              background: hotel.hasEVCharger ? "rgba(6,214,160,0.08)" : "#F8F7F4",
+              borderRadius: "14px", padding: "14px",
+              display: "flex", flexDirection: "column", gap: "4px",
+            }}>
+              <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>Borne EV</span>
+              {hotel.hasEVCharger ? (
+                <span style={{ fontSize: "18px", fontWeight: 800, color: "#06D6A0" }}>✓ Disponible</span>
+              ) : (
+                <span style={{ fontSize: "13px", color: "#9CA3AF", fontStyle: "italic" }}>Non communiqué</span>
+              )}
+            </div>
 
             {/* Date de nuit */}
             {departureDate && (
@@ -305,7 +332,9 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
             onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#e8502e")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#E8644A")}
           >
-            {departureDate ? `Voir les dispo du ${new Date(departureDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} →` : "Voir l'hôtel →"}
+            {departureDate
+              ? `Voir sur ${ctaSource} – ${new Date(departureDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} →`
+              : `Voir sur ${ctaSource} →`}
           </a>
         </div>
       </div>

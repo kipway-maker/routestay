@@ -7,6 +7,7 @@
 
 import { Hotel } from "./amadeus";
 import { haversineKm } from "./route-utils";
+import { buildBookingAffiliateUrl } from "./affiliate";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 
@@ -208,19 +209,16 @@ export async function searchHotelsViaOverpass(
       checkinDeadline,
       hasEVCharger,
       accommodationType,
-      source:             "amadeus", // champ hérité, garde la compatibilité
-      bookingUrl:         buildBookingUrl(name, city, address),
+      source:             "osm" as const,
+      // Booking.com trouve l'hôtel exact par nom+ville (redirect direct sur la fiche)
+      // Hotels.com redirige vers homepage → moins bon pour l'UX
+      bookingUrl:         buildBookingAffiliateUrl({ name, city, lat, lng: lon }),
     });
   }
 
   return hotels;
 }
 
-/** Génère un lien Booking.com avec nom + ville pré-remplis (sans AID pour l'instant) */
-function buildBookingUrl(name: string, city: string, address?: string): string {
-  const q = [name, address, city].filter(Boolean).join(", ");
-  return `https://www.booking.com/search.html?ss=${encodeURIComponent(q)}`;
-}
 
 // ── Types OSM bruts ───────────────────────────────────────────────
 interface OsmElement {

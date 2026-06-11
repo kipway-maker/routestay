@@ -1,5 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const AmadeusSDK = require("amadeus");
+import { buildHotelsAffiliateUrl } from "./affiliate";
 
 const MOCK_MODE = !process.env.AMADEUS_CLIENT_ID;
 
@@ -29,7 +30,7 @@ export interface Hotel {
   checkinDeadline: string | null; // "HH:MM"
   hasEVCharger: boolean;
   accommodationType: "hotel" | "bb" | "auberge" | "camping";
-  source: "amadeus" | "mock";
+  source: "hotels_com" | "booking" | "tripadvisor" | "osm" | "mock";
   bookingUrl?: string;
   images: string[]; // carousel
   address?: string;  // ex: "12 rue de la Paix"
@@ -97,7 +98,7 @@ export async function searchHotelsAlongRoute(
             checkinDeadline: null,
             hasEVCharger: false,
             accommodationType: "hotel" as const,
-            source: "amadeus",
+            source: "hotels_com",
           });
         });
       } catch {
@@ -219,7 +220,13 @@ function generateMockHotels(points: Array<{ lat: number; lng: number }>): Hotel[
         checkinDeadline: CHECKIN_DEADLINES[(i * 3 + j) % CHECKIN_DEADLINES.length],
         hasEVCharger: (i * 3 + j) % 3 === 0,
         accommodationType: ACCOM_TYPES[(i * 3 + j) % ACCOM_TYPES.length],
-        source: "mock" as const,
+        source: "mock" as Hotel["source"],
+        bookingUrl: buildHotelsAffiliateUrl({
+          name: mockNames[(i * 3 + j) % mockNames.length],
+          city: cities[(i + j) % cities.length],
+          lat: point.lat + (Math.random() - 0.5) * 0.1,
+          lng: point.lng + (Math.random() - 0.5) * 0.1,
+        }),
       };
     })
   );

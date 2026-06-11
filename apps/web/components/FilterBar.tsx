@@ -1,5 +1,7 @@
 "use client";
 
+export type HotelSource = "hotels_com" | "booking" | "tripadvisor";
+
 export interface Filters {
   maxPrice: number | null;
   maxDetourMin: number | null;
@@ -8,7 +10,12 @@ export interface Filters {
   evOnly: boolean;
   accommodationType: "hotel" | "bb" | "auberge" | "camping" | null;
   routePosition: "all" | "start" | "mid" | "end";
+  sources: HotelSource[];
 }
+
+// Hotels.com retiré du défaut (Hotels4 API RapidAPI hors service)
+export const ALL_SOURCES: HotelSource[] = ["hotels_com", "booking", "tripadvisor"];
+export const ACTIVE_SOURCES: HotelSource[] = ["booking", "tripadvisor"];
 
 export const DEFAULT_FILTERS: Filters = {
   maxPrice: null,
@@ -18,6 +25,13 @@ export const DEFAULT_FILTERS: Filters = {
   evOnly: false,
   accommodationType: null,
   routePosition: "all",
+  sources: [...ACTIVE_SOURCES],
+};
+
+export const SOURCE_META: Record<HotelSource, { label: string; color: string }> = {
+  hotels_com:   { label: "Hotels.com",   color: "#C8102E" },
+  booking:      { label: "Booking.com",  color: "#003580" },
+  tripadvisor:  { label: "TripAdvisor",  color: "#34E0A1" },
 };
 
 const MAX_DETOUR_MIN = 60; // slider max
@@ -55,13 +69,23 @@ interface FilterBarProps {
   onChange: (f: Filters) => void;
   totalCount: number;
   filteredCount: number;
+  availableSources?: HotelSource[];
 }
 
-export default function FilterBar({ filters, onChange, totalCount, filteredCount }: FilterBarProps) {
+export default function FilterBar({ filters, onChange, totalCount, filteredCount, availableSources = ALL_SOURCES }: FilterBarProps) {
   const sliderVal = filters.maxDetourMin ?? MAX_DETOUR_MIN;
   const isMaxed = sliderVal >= MAX_DETOUR_MIN;
   const hasActive = filters.maxPrice !== null || !isMaxed || filters.minRating !== null
-    || filters.sortBy !== "default" || filters.evOnly;
+    || filters.sortBy !== "default" || filters.evOnly
+    || filters.sources.length < ALL_SOURCES.length;
+
+  function toggleSource(src: HotelSource) {
+    const next = filters.sources.includes(src)
+      ? filters.sources.filter((s) => s !== src)
+      : [...filters.sources, src];
+    if (next.length === 0) return; // toujours au moins une source
+    onChange({ ...filters, sources: next });
+  }
 
   return (
     <div style={{ padding: "10px 20px 12px", borderBottom: "1px solid rgba(0,0,0,0.07)", background: "#FFFFFF", flexShrink: 0 }}>
@@ -156,6 +180,38 @@ export default function FilterBar({ filters, onChange, totalCount, filteredCount
           active={filters.sortBy}
           onChange={(v) => onChange({ ...filters, sortBy: v as Filters["sortBy"] })}
         />
+
+        <div style={{ width: "1px", height: "28px", background: "#e5e7eb", flexShrink: 0 }} />
+
+        {/* Sources */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+          <span style={{ fontSize: "12px", color: "#6B7280", fontWeight: 600, whiteSpace: "nowrap" }}>Sources</span>
+          {ALL_SOURCES.map((src) => {
+            const meta = SOURCE_META[src];
+            const isAvailable = ACTIVE_SOURCES.includes(src);
+            const active = isAvailable && filters.sources.includes(src);
+            return (
+              <button
+                key={src}
+                onClick={() => isAvailable && toggleSource(src)}
+                title={!isAvailable ? "Bientôt disponible" : undefined}
+                style={{
+                  padding: "5px 12px", borderRadius: "20px",
+                  border: active ? `1.5px solid ${meta.color}` : "1.5px solid #e5e7eb",
+                  background: active ? meta.color : "#FFFFFF",
+                  color: active ? "#FFFFFF" : isAvailable ? "#1A1A2E" : "#d1d5db",
+                  fontSize: "12px", fontWeight: 600,
+                  cursor: isAvailable ? "pointer" : "not-allowed",
+                  whiteSpace: "nowrap", transition: "all 0.15s",
+                  opacity: isAvailable ? 1 : 0.45,
+                  position: "relative",
+                }}>
+                {meta.label}
+                {!isAvailable && <span style={{ fontSize: "9px", marginLeft: "4px", opacity: 0.8 }}>bientôt</span>}
+              </button>
+            );
+          })}
+        </div>
 
         {hasActive && (
           <>

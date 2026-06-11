@@ -165,6 +165,9 @@ export default function SearchPageClient() {
 
   const filteredHotels = useMemo(() => {
     let list = [...hotels];
+    // Filtre sources (hotels_com / booking / tripadvisor / osm / mock)
+    if (filters.sources.length < 3)
+      list = list.filter((h) => filters.sources.includes(h.source as any) || h.source === "osm" || h.source === "mock");
     if (filters.maxPrice !== null)
       list = list.filter((h) => h.pricePerNight !== null && h.pricePerNight <= filters.maxPrice!);
     if (filters.maxDetourMin !== null)
@@ -226,7 +229,7 @@ export default function SearchPageClient() {
       const hotelRes = await fetch("/api/hotels", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ points: dirData.waypoints }),
+        body: JSON.stringify({ points: dirData.waypoints, departureDate, sources: filters.sources }),
       });
       if (!hotelRes.ok) { setLoading(false); return; }
       setHotels(await hotelRes.json());
@@ -284,7 +287,7 @@ export default function SearchPageClient() {
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
           <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-kipway-v2.png" alt="KipWay" style={{ height: "106px", width: "auto", mixBlendMode: "multiply" }} />
+            <img src="/logo-kipway-v3.png" alt="KipWay" style={{ height: "48px", width: "auto" }} />
           </Link>
 
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -539,14 +542,29 @@ export default function SearchPageClient() {
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               {([
                 {
+                  key: "nodetour",
+                  icon: (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                  ),
+                  label: "Sans détour", active: filters.maxDetourMin === 5,
+                  disabled: false,
+                  tooltip: null,
+                  toggle: () => setFilters((f) => ({ ...f, maxDetourMin: f.maxDetourMin === 5 ? null : 5 })),
+                },
+                {
                   key: "ev",
                   icon: (
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                     </svg>
                   ),
-                  label: "Borne EV", active: filters.evOnly,
-                  toggle: () => setFilters((f) => ({ ...f, evOnly: !f.evOnly })),
+                  label: "Borne EV",
+                  active: false,
+                  disabled: true,
+                  tooltip: "Non disponible via Booking / TripAdvisor",
+                  toggle: () => {},
                 },
                 {
                   key: "24h",
@@ -555,39 +573,36 @@ export default function SearchPageClient() {
                       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                     </svg>
                   ),
-                  label: "Accueil 24h", active: filterReception24h,
-                  toggle: () => setFilterReception24h((v) => !v),
+                  label: "Accueil 24h",
+                  active: false,
+                  disabled: true,
+                  tooltip: "Non disponible via Booking / TripAdvisor",
+                  toggle: () => {},
                 },
-                {
-                  key: "nodetour",
-                  icon: (
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                    </svg>
-                  ),
-                  label: "Sans détour", active: filters.maxDetourMin === 5,
-                  toggle: () => setFilters((f) => ({ ...f, maxDetourMin: f.maxDetourMin === 5 ? null : 5 })),
-                },
-              ] as { key: string; icon: React.ReactNode; label: string; active: boolean; toggle: () => void }[]).map((item) => (
+              ] as { key: string; icon: React.ReactNode; label: string; active: boolean; disabled: boolean; tooltip: string | null; toggle: () => void }[]).map((item) => (
                 <button
                   key={item.key}
-                  onClick={item.toggle}
+                  onClick={item.disabled ? undefined : item.toggle}
+                  title={item.tooltip ?? undefined}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: "5px",
                     padding: "5px 12px", borderRadius: "20px",
                     border: item.active ? "1px solid #E8644A" : "1px solid rgba(0,0,0,0.10)",
-                    background: item.active ? "#E8644A" : "rgba(255,255,255,0.70)",
+                    background: item.disabled ? "rgba(0,0,0,0.03)" : item.active ? "#E8644A" : "rgba(255,255,255,0.70)",
                     backdropFilter: "blur(12px)",
                     WebkitBackdropFilter: "blur(12px)",
-                    color: item.active ? "#FFFFFF" : "#4B5563",
-                    fontSize: "12px", fontWeight: 500, cursor: "pointer",
+                    color: item.disabled ? "#d1d5db" : item.active ? "#FFFFFF" : "#4B5563",
+                    fontSize: "12px", fontWeight: 500,
+                    cursor: item.disabled ? "not-allowed" : "pointer",
                     transition: "all 0.15s", whiteSpace: "nowrap",
                     boxShadow: item.active ? "0 2px 8px rgba(232,100,74,0.25)" : "0 1px 3px rgba(0,0,0,0.06)",
                     letterSpacing: "0.01em",
+                    opacity: item.disabled ? 0.5 : 1,
                   }}
                 >
                   {item.icon}
                   {item.label}
+                  {item.disabled && <span style={{ fontSize: "9px", opacity: 0.7 }}>N/A</span>}
                 </button>
               ))}
             </div>
