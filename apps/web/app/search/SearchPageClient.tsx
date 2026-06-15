@@ -282,17 +282,45 @@ export default function SearchPageClient() {
           flexShrink: 0,
           display: "flex", alignItems: "center", gap: "12px",
           position: "relative",
-          isolation: "isolate",
+          overflow: "visible",
         }}>
           {/* Gradient top border */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
 
-          <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
+          {/* Ruban qui continue le fil du logo vers la droite, passe DERRIÈRE l'input */}
+          <svg
+            style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }}
+            preserveAspectRatio="none"
+            viewBox="0 0 800 80"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Ruban principal : part du bord droit du logo (~110px) au niveau du fil (~62% de hauteur = y≈50) */}
+            <path
+              d="M 108,50 C 140,46 180,54 240,49 C 310,43 380,55 460,49 C 530,44 620,52 720,48 C 760,46 790,48 820,47"
+              fill="none"
+              stroke="#C1622A"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              opacity="0.55"
+            />
+            {/* Ombre légère en dessous pour l'effet de profondeur */}
+            <path
+              d="M 108,52 C 140,48 180,56 240,51 C 310,45 380,57 460,51 C 530,46 620,54 720,50 C 760,48 790,50 820,49"
+              fill="none"
+              stroke="#C1622A"
+              strokeWidth="1"
+              strokeLinecap="round"
+              opacity="0.18"
+            />
+          </svg>
+
+          <Link href="/" style={{ textDecoration: "none", flexShrink: 0, position: "relative", zIndex: 3 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-kipway-v3.png" alt="KipWay" style={{ height: "64px", width: "auto" }} />
           </Link>
 
-          <div style={{ flex: 1, minWidth: 0 }}>
+          {/* z-index: 2 → l'input est AU-DESSUS du ruban mais le ruban passe derrière */}
+          <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 2 }}>
             <SearchBar onSearch={handleSearch} loading={loading} compact />
           </div>
 
@@ -301,7 +329,7 @@ export default function SearchPageClient() {
             <button
               onClick={() => setFilterModalOpen(true)}
               style={{
-                flexShrink: 0,
+                flexShrink: 0, position: "relative", zIndex: 2,
                 display: "flex", alignItems: "center", gap: "6px",
                 padding: "7px 14px", borderRadius: "20px",
                 border: activeFilters > 0 ? "1.5px solid #E8644A" : "1.5px solid #e5e7eb",
