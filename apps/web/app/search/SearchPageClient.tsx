@@ -276,22 +276,26 @@ export default function SearchPageClient() {
 
         {/* Header : logo + search + filtres */}
         <div style={{
-          padding: "8px 20px",
+          padding: "10px 20px 0px",
           background: "#FFFFFF",
-          borderBottom: "1px solid rgba(0,0,0,0.07)",
           flexShrink: 0,
-          display: "flex", alignItems: "center", gap: "12px",
+          display: "flex", alignItems: "center", gap: "16px",
           position: "relative",
-          isolation: "isolate",
+          overflow: "visible",
+          zIndex: 10,
         }}>
-          {/* Gradient top border — avoids border-image / border-radius incompatibility on Windows */}
+          {/* Gradient top border */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
-          <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
+          {/* Ligne de séparation qui passe SOUS l'input */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "1px", background: "rgba(0,0,0,0.08)", zIndex: 0 }} />
+
+          <Link href="/" style={{ textDecoration: "none", flexShrink: 0, zIndex: 2, paddingBottom: "10px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-kipway-v3.png" alt="KipWay" style={{ height: "48px", width: "auto" }} />
+            <img src="/logo-kipway-v3.png" alt="KipWay" style={{ height: "64px", width: "auto", display: "block" }} />
           </Link>
 
-          <div style={{ flex: 1, minWidth: 0 }}>
+          {/* SearchBar déborde légèrement en bas → passe sur la ligne de séparation */}
+          <div style={{ flex: 1, minWidth: 0, zIndex: 2, marginBottom: "-14px" }}>
             <SearchBar onSearch={handleSearch} loading={loading} compact />
           </div>
 
