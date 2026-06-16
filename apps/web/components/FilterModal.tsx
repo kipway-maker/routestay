@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Hotel } from "@/lib/amadeus";
-import { Filters, DEFAULT_FILTERS } from "@/components/FilterBar";
+import { Filters, DEFAULT_FILTERS, ALL_SOURCES, SOURCE_META, HotelSource } from "@/components/FilterBar";
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -257,6 +257,58 @@ export default function FilterModal({
                 onClick={() => onChange({ ...filters, minRating: opt.value })}
               />
             ))}
+          </div>
+
+          <Divider />
+
+          {/* Annonceurs */}
+          <SectionTitle>Annonceurs</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {ALL_SOURCES.map((src: HotelSource) => {
+              const meta = SOURCE_META[src];
+              const active = filters.sources.includes(src);
+              const toggle = () => {
+                const next = active
+                  ? filters.sources.filter((s) => s !== src)
+                  : [...filters.sources, src];
+                if (next.length === 0) return;
+                onChange({ ...filters, sources: next });
+              };
+              return (
+                <button
+                  key={src}
+                  onClick={toggle}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "12px 16px", borderRadius: "12px", cursor: "pointer",
+                    border: active ? `2px solid ${meta.color}` : "2px solid #F3F4F6",
+                    background: active ? `${meta.color}12` : "#FAFAFA",
+                    transition: "all 0.15s", textAlign: "left",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    {/* Pastille couleur */}
+                    <div style={{
+                      width: "10px", height: "10px", borderRadius: "50%",
+                      background: meta.color, flexShrink: 0,
+                    }}/>
+                    <span style={{ fontSize: "14px", fontWeight: active ? 700 : 500, color: "#1A1A2E" }}>
+                      {meta.label}
+                    </span>
+                  </div>
+                  {/* Toggle */}
+                  <div style={{
+                    width: "22px", height: "22px", borderRadius: "50%", flexShrink: 0,
+                    border: active ? `2px solid ${meta.color}` : "2px solid #E5E7EB",
+                    background: active ? meta.color : "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "11px", color: "#fff", transition: "all 0.15s",
+                  }}>
+                    {active && "✓"}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           <Divider />

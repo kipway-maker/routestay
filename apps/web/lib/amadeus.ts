@@ -94,7 +94,11 @@ export async function searchHotelsAlongRoute(
             currency: "EUR",
             rating: hotel.rating ? parseFloat(hotel.rating) : null,
             imageUrl: MOCK_IMAGES_BY_TYPE["hotel"][Math.floor(Math.random() * MOCK_IMAGES_BY_TYPE["hotel"].length)],
-            images: [MOCK_IMAGES_BY_TYPE["hotel"][Math.floor(Math.random() * MOCK_IMAGES_BY_TYPE["hotel"].length)]],
+            images: (() => {
+              const imgs = MOCK_IMAGES_BY_TYPE["hotel"];
+              const start = Math.floor(Math.random() * imgs.length);
+              return [0, 1, 2].map((k) => imgs[(start + k) % imgs.length]);
+            })(),
             checkinDeadline: null,
             hasEVCharger: false,
             accommodationType: "hotel" as const,

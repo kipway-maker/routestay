@@ -90,21 +90,19 @@ function parseCheckin(raw: string | undefined, is24h: boolean): string | null {
 // ── Requête Overpass ─────────────────────────────────────────────
 
 export async function searchHotelsViaOverpass(
-  points: Array<{ lat: number; lng: number }>
+  stopPoint: { lat: number; lng: number },
+  radiusKm: number = 25
 ): Promise<Hotel[]> {
-  const sampled = points.slice(0, 6); // max 6 waypoints pour garder la requête légère
-
-  // Construit les clauses `around` pour chaque waypoint
+  const radiusM = radiusKm * 1000;
   const tourismTypes = "hotel|hostel|motel|guest_house|apartment|camp_site";
-  const aroundClauses = sampled
-    .map(
-      (p) =>
-        `  node["tourism"~"${tourismTypes}"]["name"](around:18000,${p.lat},${p.lng});\n` +
-        `  way["tourism"~"${tourismTypes}"]["name"](around:18000,${p.lat},${p.lng});`
-    )
-    .join("\n");
+  const { lat, lng } = stopPoint;
 
-  const query = `[out:json][timeout:60];\n(\n${aroundClauses}\n);\nout center tags;`;
+  const query = `[out:json][timeout:60];
+(
+  node["tourism"~"${tourismTypes}"]["name"](around:${radiusM},${lat},${lng});
+  way["tourism"~"${tourismTypes}"]["name"](around:${radiusM},${lat},${lng});
+);
+out center tags;`;
 
   let data: { elements: OsmElement[] };
   try {
@@ -140,18 +138,13 @@ export async function searchHotelsViaOverpass(
     const name = tags.name?.trim();
     if (!name) continue;
 
-    // ── Détour depuis la route ────────────────────────────────────
-    let minDist = Infinity;
-    let nearestIdx = 0;
-    for (let i = 0; i < points.length; i++) {
-      const d = haversineKm(lat, lon, points[i].lat, points[i].lng);
-      if (d < minDist) { minDist = d; nearestIdx = i; }
-    }
-    if (minDist > 15) continue; // ignore hôtels > 15 km de la route
+    // ── Distance au point d'étape ─────────────────────────────────
+    const distToStop = haversineKm(lat, lon, stopPoint.lat, stopPoint.lng);
+    if (distToStop > radiusKm) continue;
 
-    const detourKm     = Math.round(minDist * 2 * 10) / 10;
+    const detourKm      = Math.round(distToStop * 2 * 10) / 10;
     const detourMinutes = Math.round((detourKm / 65) * 60);
-    const routePositionPct = Math.round((nearestIdx / Math.max(points.length - 1, 1)) * 100);
+    const routePositionPct = 50; // sera overridé par stopPct dans route.ts
 
     // ── Champs OSM ────────────────────────────────────────────────
     const accommodationType = osmTypeToAccomType(tags.tourism ?? "hotel");
@@ -199,7 +192,7 @@ export async function searchHotelsViaOverpass(
       name,
       lat,
       lng:                lon,
-      distanceFromRouteKm: Math.round(minDist * 10) / 10,
+      distanceFromRouteKm: Math.round(distToStop * 10) / 10,
       detourKm,
       detourMinutes,
       routePositionPct,

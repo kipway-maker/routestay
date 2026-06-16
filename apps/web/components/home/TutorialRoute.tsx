@@ -271,6 +271,7 @@ function Vineyard({ x, y }: { x:number; y:number }) {
   );
 }
 
+
 /** Botte de foin ronde */
 function HayBale({ x, y, s=1 }: { x:number; y:number; s?:number }) {
   return (
@@ -535,36 +536,149 @@ function Birds({ x, y, s=1 }: { x:number; y:number; s?:number }) {
 
 /** Étape 2 — Grand hôtel classique (5 étages, drapeau, auvent) */
 function GrandHotel({ x, y }: { x:number; y:number }) {
+  // Palace haussmannien — ailes latérales, mansarde, colonnes, fontaine
   return (
     <g transform={`translate(${x},${y})`}>
-      <ellipse cx="2" cy="16" rx="44" ry="8" fill="rgba(0,0,0,0.07)"/>
-      {/* Corps principal */}
-      <rect x="-36" y="-100" width="72" height="116" fill="#F2EBE0" rx="2"/>
-      {/* Bandeau doré en haut */}
-      <rect x="-38" y="-102" width="76" height="10" fill="#F5C842" rx="2"/>
-      <rect x="-38" y="-97" width="76" height="4" fill="rgba(0,0,0,0.06)"/>
-      {/* Mât + drapeau */}
-      <line x1="4" y1="-102" x2="4" y2="-118" stroke="#C0A87A" strokeWidth="1.5"/>
-      <polygon points="4,-118 22,-113 4,-108" fill="#E8644A"/>
-      {/* 5 rangées × 4 fenêtres */}
-      {[0,1,2,3,4].flatMap(row => [-24,-9,6,21].map(col => (
-        <rect key={`w${row}${col}`} x={col} y={-90+row*17} width="9" height="11"
-          fill="#B8D9F0" rx="1" opacity="0.88"/>
+      {/* ── Ombre au sol ── */}
+      <ellipse cx="0" cy="18" rx="88" ry="10" fill="rgba(0,0,0,0.08)"/>
+
+      {/* ══ Aile gauche ══ */}
+      <rect x="-90" y="-110" width="38" height="126" fill="#EDE5D8" rx="1"/>
+      {/* Corniche aile G */}
+      <rect x="-92" y="-112" width="42" height="6" fill="#D4C4A8" rx="1"/>
+      {/* Mansarde aile G */}
+      <rect x="-88" y="-128" width="34" height="18" fill="#8B7355" rx="1"/>
+      <rect x="-86" y="-126" width="30" height="2" fill="rgba(255,255,255,0.2)"/>
+      {/* Lucarne aile G */}
+      <rect x="-80" y="-126" width="10" height="10" rx="1" fill="#B8D9F0" opacity="0.85"/>
+      <line x1="-75" y1="-126" x2="-75" y2="-116" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8"/>
+      {/* Fenêtres aile G — 3 rangées × 2 */}
+      {[0,1,2].flatMap(row => [-82,-67].map(col => (
+        <g key={`wgl${row}${col}`}>
+          <rect x={col} y={-102+row*28} width="11" height="16" rx="1" fill="#B8D9F0" opacity="0.88"/>
+          <rect x={col+1} y={-102+row*28} width="4" height="16" rx="0" fill="rgba(255,255,255,0.15)"/>
+          {/* Volet */}
+          <rect x={col-3} y={-103+row*28} width="3" height="17" rx="0.5" fill="#C8B090" opacity="0.7"/>
+          <rect x={col+12} y={-103+row*28} width="3" height="17" rx="0.5" fill="#C8B090" opacity="0.7"/>
+        </g>
       )))}
-      {/* Bandeau RDC */}
-      <rect x="-36" y="-18" width="72" height="2" fill="rgba(0,0,0,0.07)"/>
-      {/* Porte arrondie (rect rx = porte en arche) */}
-      <rect x="-9" y="-16" width="18" height="32" rx="9" fill="#A07850"/>
-      <rect x="-6" y="-13" width="5" height="18" rx="2" fill="rgba(255,255,255,0.18)"/>
-      {/* Fenêtres RDC */}
-      <rect x="-32" y="-15" width="16" height="14" rx="1.5" fill="#B8D9F0" opacity="0.88"/>
-      <rect x="16"  y="-15" width="16" height="14" rx="1.5" fill="#B8D9F0" opacity="0.88"/>
-      {/* Auvent */}
-      <rect x="-13" y="-18" width="26" height="5" rx="2" fill="#E8644A"/>
-      {[0,1,2,3].map(i => (
-        <line key={`s${i}`} x1={-10+i*7} y1="-18" x2={-9+i*7} y2="-13"
-          stroke="white" strokeWidth="1.2" opacity="0.55"/>
+
+      {/* ══ Corps central ══ */}
+      <rect x="-52" y="-148" width="104" height="164" fill="#F5EEE4" rx="1"/>
+      {/* Corniche principale */}
+      <rect x="-56" y="-150" width="112" height="8" fill="#D4C4A8" rx="1"/>
+      <rect x="-54" y="-148" width="108" height="3" fill="rgba(255,255,255,0.30)"/>
+      {/* Mansarde centrale */}
+      <rect x="-50" y="-174" width="100" height="26" fill="#7A6448" rx="1"/>
+      {/* Détail mansarde — zinc */}
+      <rect x="-48" y="-172" width="96" height="3" fill="rgba(255,255,255,0.18)"/>
+      {/* 3 lucarnes mansarde */}
+      {[-30, 0, 30].map(lx => (
+        <g key={`luc${lx}`}>
+          <rect x={lx-8} y={-170} width="16" height="16" rx="2" fill="#F5EEE4"/>
+          <rect x={lx-6} y={-168} width="12" height="12" rx="1" fill="#B8D9F0" opacity="0.9"/>
+          <line x1={lx} y1="-168" x2={lx} y2="-156" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8"/>
+          {/* Fronton lucarne */}
+          <polygon points={`${lx-9},-171 ${lx},-178 ${lx+9},-171`} fill="#8B7355"/>
+        </g>
       ))}
+      {/* Mâts + drapeaux */}
+      <line x1="-2" y1="-174" x2="-2" y2="-194" stroke="#B8A070" strokeWidth="1.5"/>
+      <polygon points="-2,-194 18,-188 -2,-182" fill="#E8644A"/>
+      <line x1="40" y1="-168" x2="40" y2="-184" stroke="#B8A070" strokeWidth="1.2"/>
+      <polygon points="40,-184 56,-179 40,-174" fill="#6FA8C0"/>
+      <line x1="-44" y1="-168" x2="-44" y2="-184" stroke="#B8A070" strokeWidth="1.2"/>
+      <polygon points="-44,-184 -28,-179 -44,-174" fill="#E8644A"/>
+
+      {/* Fenêtres centrales — 4 rangées × 4 */}
+      {[0,1,2,3].flatMap(row => [-36,-13,10,33].map(col => (
+        <g key={`wc${row}${col}`}>
+          <rect x={col} y={-138+row*28} width="13" height="18" rx="1.5" fill="#B8D9F0" opacity="0.9"/>
+          <line x1={col+6.5} y1={-138+row*28} x2={col+6.5} y2={-120+row*28} stroke="rgba(255,255,255,0.4)" strokeWidth="0.8"/>
+          <line x1={col} y1={-129+row*28} x2={col+13} y2={-129+row*28} stroke="rgba(255,255,255,0.3)" strokeWidth="0.6"/>
+          {/* Appui de fenêtre */}
+          <rect x={col-1} y={-121+row*28} width="15" height="2" rx="0.5" fill="#C8B898"/>
+        </g>
+      )))}
+
+      {/* Balcons fer forgé — rangée 2 et 4 */}
+      {[1,3].flatMap(row => [-36,-13,10,33].map(col => (
+        <g key={`bal${row}${col}`}>
+          <rect x={col-2} y={-112+row*28} width="17" height="3" rx="0.5" fill="#8B7B6B"/>
+          {[0,1,2,3,4].map(i => (
+            <line key={i} x1={col-1+i*3.5} y1={-112+row*28} x2={col-1+i*3.5} y2={-109+row*28}
+              stroke="#8B7B6B" strokeWidth="1"/>
+          ))}
+        </g>
+      )))}
+
+      {/* ══ Aile droite ══ */}
+      <rect x="52" y="-110" width="38" height="126" fill="#EDE5D8" rx="1"/>
+      <rect x="50" y="-112" width="42" height="6" fill="#D4C4A8" rx="1"/>
+      <rect x="54" y="-128" width="34" height="18" fill="#8B7355" rx="1"/>
+      <rect x="56" y="-126" width="30" height="2" fill="rgba(255,255,255,0.2)"/>
+      <rect x="70" y="-126" width="10" height="10" rx="1" fill="#B8D9F0" opacity="0.85"/>
+      <line x1="75" y1="-126" x2="75" y2="-116" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8"/>
+      {[0,1,2].flatMap(row => [56,71].map(col => (
+        <g key={`wgr${row}${col}`}>
+          <rect x={col} y={-102+row*28} width="11" height="16" rx="1" fill="#B8D9F0" opacity="0.88"/>
+          <rect x={col+1} y={-102+row*28} width="4" height="16" rx="0" fill="rgba(255,255,255,0.15)"/>
+          <rect x={col-3} y={-103+row*28} width="3" height="17" rx="0.5" fill="#C8B090" opacity="0.7"/>
+          <rect x={col+12} y={-103+row*28} width="3" height="17" rx="0.5" fill="#C8B090" opacity="0.7"/>
+        </g>
+      )))}
+
+      {/* ══ Portique RDC — 4 colonnes ══ */}
+      {[-36,-12,12,36].map(cx => (
+        <g key={`col${cx}`}>
+          {/* Fût */}
+          <rect x={cx-3} y={-32} width="6" height="36" fill="#E8E0D0" rx="1"/>
+          {/* Chapiteau */}
+          <rect x={cx-5} y={-34} width="10" height="4" rx="0.5" fill="#D4C4A8"/>
+          {/* Base */}
+          <rect x={cx-4} y="4" width="8" height="3" rx="0.5" fill="#D4C4A8"/>
+        </g>
+      ))}
+      {/* Entablement sur colonnes */}
+      <rect x="-42" y="-36" width="84" height="6" fill="#D4C4A8" rx="1"/>
+      {/* Auvent rayé */}
+      <rect x="-42" y="-38" width="84" height="6" fill="#1E1E2E" rx="1" opacity="0.85"/>
+      {[0,1,2,3,4,5,6,7,8,9].map(i => (
+        <rect key={i} x={-41+i*8.5} y="-38" width="4" height="6" rx="0" fill="#F5C842" opacity="0.7"/>
+      ))}
+      {/* Lettre enseigne */}
+      <rect x="-28" y="-34" width="56" height="3" rx="1" fill="rgba(255,255,255,0.15)"/>
+
+      {/* ── Porte centrale double ── */}
+      <rect x="-14" y="-20" width="28" height="36" rx="2" fill="#6A5240"/>
+      <rect x="-14" y="-20" width="13" height="36" rx="2" fill="#7A6250"/>
+      <rect x="-13" y="-18" width="5" height="20" rx="1" fill="rgba(255,255,255,0.12)"/>
+      <rect x="1"   y="-18" width="5" height="20" rx="1" fill="rgba(255,255,255,0.12)"/>
+      {/* Poignées */}
+      <circle cx="-2" cy="-4" r="1.5" fill="#D4A840"/>
+      <circle cx="2"  cy="-4" r="1.5" fill="#D4A840"/>
+      {/* Arche porte */}
+      <path d="M-14,-20 Q0,-32 14,-20" fill="#5A4230" opacity="0.6"/>
+
+      {/* ── Fenêtres RDC latérales ── */}
+      {[-44, 30].map(wx => (
+        <g key={`rdcw${wx}`}>
+          <rect x={wx} y="-28" width="20" height="24" rx="1.5" fill="#B8D9F0" opacity="0.88"/>
+          <line x1={wx+10} y1="-28" x2={wx+10} y2="-4" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8"/>
+          <line x1={wx} y1="-16" x2={wx+20} y2="-16" stroke="rgba(255,255,255,0.3)" strokeWidth="0.6"/>
+        </g>
+      ))}
+
+      {/* ── Fontaine devant ── */}
+      <ellipse cx="0" cy="28" rx="28" ry="9" fill="#A8D0E8" opacity="0.6"/>
+      <ellipse cx="0" cy="28" rx="28" ry="9" fill="none" stroke="#8BBAD4" strokeWidth="1.2" opacity="0.8"/>
+      <ellipse cx="0" cy="26" rx="12" ry="4" fill="#C8E4F4" opacity="0.5"/>
+      {/* Vasque */}
+      <ellipse cx="0" cy="22" rx="8" ry="3" fill="#D4C4A8" opacity="0.9"/>
+      {/* Jet */}
+      <path d="M0,20 Q-3,14 -1,10" fill="none" stroke="#A8D0E8" strokeWidth="1.5" opacity="0.7"/>
+      <path d="M0,20 Q3,13 1,9"  fill="none" stroke="#A8D0E8" strokeWidth="1.5" opacity="0.7"/>
+      <path d="M0,20 Q0,12 0,8"  fill="none" stroke="#C8E4F4" strokeWidth="2"   opacity="0.8"/>
     </g>
   );
 }
@@ -670,36 +784,13 @@ function StepCircle({ x, y, color, icon }: { x:number; y:number; color:string; i
 }
 
 function StepCard({
-  step, x, y, align, isHovered, onHover, onLeave, cardYOffset=0,
+  step, x, y, align, cardYOffset=0,
 }: {
-  step: typeof STEPS[0]; x: number; y: number; align: "left"|"right";
-  isHovered: boolean; onHover: () => void; onLeave: () => void; cardYOffset?: number;
+  step: typeof STEPS[0]; x: number; y: number; align: "left"|"right"; cardYOffset?: number;
 }) {
-  // ── Carte compacte ────────────────────────────────────────
   const cw = 168, ch = 40;
   const cx = align === "right" ? x + ICON_R + 14 : x - ICON_R - 14 - cw;
   const cy = (y + cardYOffset) - ch / 2;
-
-  // ── Carte détail glassmorphisme ─────────────────────────
-  // Suffisamment grande pour contenir la description sans débordement
-  const dw = 205, dh = 72;
-  const dx = align === "right" ? cx + cw + 12 : cx - dw - 12;
-  const dy = cy - (dh - ch) / 2; // alignement vertical centré
-
-  // Split ≤ 42 chars/ligne → 2 lignes pour toutes les descriptions
-  const words = step.desc.split(" ");
-  const lines: string[] = [];
-  let cur = "";
-  for (const word of words) {
-    if ((cur + " " + word).trim().length <= 42) cur = (cur + " " + word).trim();
-    else { lines.push(cur); cur = word; }
-  }
-  if (cur) lines.push(cur);
-
-  // Hauteur réelle du texte → centrage vertical dans la carte détail
-  const lineH = 14;
-  const textBlockH = lines.length * lineH;
-  const textStartY = dy + (dh - textBlockH) / 2 + lineH - 3;
 
   return (
     <g>
@@ -709,38 +800,21 @@ function StepCard({
         x2={align === "right" ? x + ICON_R + 14 : x - ICON_R - 14} y2={y + cardYOffset}
         stroke="rgba(255,255,255,0.55)" strokeWidth="1.5" strokeDasharray="3,3"/>
 
-      {/* ── Carte détail — glassmorphisme ── */}
-      <g style={{ opacity: isHovered ? 1 : 0, transition: "opacity 0.22s ease", pointerEvents: "none" }}>
-        <rect x={dx} y={dy} width={dw} height={dh} rx="14"
-          fill="rgba(255,255,255,0.75)"
-          stroke="rgba(255,255,255,0.8)" strokeWidth="1.2"
-          style={{ filter: "drop-shadow(0 6px 24px rgba(0,0,0,0.10))" }}/>
-        {/* Accent couleur */}
-        <rect x={dx+14} y={dy+11} width={22} height={3} rx="1.5" fill={step.color} opacity="0.55"/>
-        {/* Texte centré verticalement */}
-        {lines.map((line, i) => (
-          <text key={i} x={dx+14} y={textStartY + i * lineH}
-            fontFamily="system-ui,sans-serif" fontSize="7.5" fill="#4B5563">{line}</text>
-        ))}
-      </g>
-
-      {/* ── Carte compacte ── */}
-      <g onMouseEnter={onHover} onMouseLeave={onLeave} style={{ cursor: "default" }}>
-        <rect x={cx} y={cy} width={cw} height={ch} rx="12"
-          fill={isHovered ? "rgba(255,255,255,0.98)" : "rgba(255,255,255,0.93)"}
-          style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.08))", transition: "all 0.18s" }}/>
-        {/* Badge numéro — centré verticalement */}
-        <rect x={cx+10} y={cy+10} width={22} height={20} rx="6" fill={step.color} opacity="0.12"/>
-        <text x={cx+21} y={cy+22.5} textAnchor="middle"
-          fontFamily="'Nunito',sans-serif" fontWeight="900" fontSize="7" fill={step.color}>
-          {step.number}
-        </text>
-        {/* Titre — centré verticalement */}
-        <text x={cx+38} y={cy+22.5}
-          fontFamily="'Nunito',sans-serif" fontWeight="800" fontSize="8" fill="#1E1E2E">
-          {step.title}
-        </text>
-      </g>
+      {/* Carte */}
+      <rect x={cx} y={cy} width={cw} height={ch} rx="12"
+        fill="rgba(255,255,255,0.93)"
+        style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.08))" }}/>
+      {/* Badge numéro */}
+      <rect x={cx+10} y={cy+10} width={22} height={20} rx="6" fill={step.color} opacity="0.12"/>
+      <text x={cx+21} y={cy+22.5} textAnchor="middle"
+        fontFamily="'Nunito',sans-serif" fontWeight="900" fontSize="7" fill={step.color}>
+        {step.number}
+      </text>
+      {/* Titre */}
+      <text x={cx+38} y={cy+22.5}
+        fontFamily="'Nunito',sans-serif" fontWeight="800" fontSize="8" fill="#1E1E2E">
+        {step.title}
+      </text>
     </g>
   );
 }
@@ -748,7 +822,6 @@ function StepCard({
 // ── Composant principal ───────────────────────────────────────
 export default function TutorialRoute({ hideHeader=false, hideStepCards=false }: { hideHeader?:boolean; hideStepCards?:boolean }) {
   const [maskPoly, setMaskPoly] = useState<string>("");
-  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
   useEffect(() => {
     function update() {
@@ -849,6 +922,9 @@ export default function TutorialRoute({ hideHeader=false, hideStepCards=false }:
           {/* Décapotable jaune — milieu du rond (côté droit, x≈290, y≈840) */}
           <Convertible x={108} y={840} rotation={270}/>
 
+          {/* Palace — à gauche de l'étape 4, avec respiration */}
+          <GrandHotel x={460} y={1340}/>
+
           {/* Voiture bleue — entre étape 3 et 4 */}
           <Car x={420} y={1148} rotation={10} flipX={true} bodyColor="#6FA8C0" roofColor="#5A90A8" bumperColor="#4A7890"/>
 
@@ -856,9 +932,6 @@ export default function TutorialRoute({ hideHeader=false, hideStepCards=false }:
           {!hideStepCards && PINS.map((pin, i) => (
             <StepCard
               key={i} step={STEPS[i]} x={pin.x} y={pin.y} align={cardAligns[i]}
-              isHovered={hoveredStep === i}
-              onHover={() => setHoveredStep(i)}
-              onLeave={() => setHoveredStep(null)}
               cardYOffset={i === 0 ? -60 : 0}
             />
           ))}

@@ -170,7 +170,11 @@ async function fetchHotels(
       currency:            "EUR",
       rating:              null,  // v3/list ne retourne pas de note guest
       imageUrl,
-      images:              photos.length ? photos : [imageUrl],
+      images:              photos.length >= 2 ? photos : [
+        imageUrl,
+        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&h=400&fit=crop",
+        "https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=600&h=400&fit=crop",
+      ],
       checkinDeadline:     null,
       hasEVCharger:        false,
       accommodationType:   "hotel",

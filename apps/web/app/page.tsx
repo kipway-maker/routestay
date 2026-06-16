@@ -9,10 +9,11 @@ interface Place { name: string; lat: number; lng: number; }
 export default function HomePage() {
   const router = useRouter();
 
-  function handleSearch(origin: Place, destination: Place) {
+  function handleSearch(origin: Place, destination: Place, departureDate: string) {
     const params = new URLSearchParams({
       fromName: origin.name, fromLat: String(origin.lat), fromLng: String(origin.lng),
       toName: destination.name, toLat: String(destination.lat), toLng: String(destination.lng),
+      date: departureDate,
     });
     router.push(`/search?${params.toString()}`);
   }

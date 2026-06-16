@@ -21,7 +21,7 @@ interface DropdownState {
 }
 
 interface SearchBarProps {
-  onSearch: (origin: Place, destination: Place) => void;
+  onSearch: (origin: Place, destination: Place, departureDate: string) => void;
   loading: boolean;
   compact?: boolean;
 }
@@ -321,11 +321,24 @@ function AddressInput({
 }
 
 // ── SearchBar ─────────────────────────────────────────────────────────────────
+function getTodayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+function formatDateShort(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+
 export default function SearchBar({ onSearch, loading, compact = false }: SearchBarProps) {
-  const [origin,      setOrigin]      = useState<Place | null>(null);
-  const [destination, setDestination] = useState<Place | null>(null);
-  const [dropdown,    setDropdown]    = useState<DropdownState | null>(null);
+  const [origin,        setOrigin]        = useState<Place | null>(null);
+  const [destination,   setDestination]   = useState<Place | null>(null);
+  const [dropdown,      setDropdown]      = useState<DropdownState | null>(null);
+  const [departureDate, setDepartureDate] = useState<string>(getTodayISO());
+  const [dateOpen,      setDateOpen]      = useState(false);
   const pillRef = useRef<HTMLDivElement>(null);
+  const dateRef = useRef<HTMLInputElement>(null);
   const canSearch = !!origin && !!destination && !loading;
 
   useEffect(() => {
@@ -383,13 +396,39 @@ export default function SearchBar({ onSearch, loading, compact = false }: Search
     </svg>
   );
 
+  // Champ date inline dans la pill
+  const dateField = (
+    <div
+      style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: compact ? "0 12px" : "0 18px", cursor: "pointer", flexShrink: 0 }}
+      onClick={() => dateRef.current?.showPicker?.()}
+    >
+      <span style={{ fontSize: "10px", fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.6px", textTransform: "uppercase", marginBottom: "3px", userSelect: "none" }}>
+        📅 Date
+      </span>
+      <span style={{ fontSize: compact ? "12px" : "14px", fontWeight: 700, color: "#1E1E2E", whiteSpace: "nowrap", userSelect: "none" }}>
+        {formatDateShort(departureDate)}
+      </span>
+      <input
+        ref={dateRef}
+        type="date"
+        value={departureDate}
+        min={getTodayISO()}
+        onChange={(e) => setDepartureDate(e.target.value)}
+        style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+        tabIndex={-1}
+      />
+    </div>
+  );
+
   if (compact) {
     return (
       <div ref={pillRef} style={pillStyle}>
         <AddressInput label="Départ"  placeholder="Ville de départ" icon={departIcon}  value={origin}      onSelect={setOrigin}      {...common} />
         <Divider />
-        <AddressInput label="Arrivée" placeholder="Ville d'arrivée"    icon={arriveeIcon} value={destination} onSelect={setDestination} {...common} />
-        <button onClick={() => canSearch && onSearch(origin!, destination!)} disabled={!canSearch} style={btnStyle}>
+        <AddressInput label="Arrivée" placeholder="Ville d'arrivée" icon={arriveeIcon} value={destination} onSelect={setDestination} {...common} />
+        <Divider />
+        {dateField}
+        <button onClick={() => canSearch && onSearch(origin!, destination!, departureDate)} disabled={!canSearch} style={btnStyle}>
           {loading ? "…" : "Chercher →"}
         </button>
         {dropdown && <PillDropdown dropdown={dropdown} compact />}
@@ -402,9 +441,11 @@ export default function SearchBar({ onSearch, loading, compact = false }: Search
       <div ref={pillRef} style={pillStyle}>
         <AddressInput label="Départ"  placeholder="Ville de départ" icon={departIcon}  value={origin}      onSelect={setOrigin}      {...common} />
         <Divider />
-        <AddressInput label="Arrivée" placeholder="Ville d'arrivée"    icon={arriveeIcon} value={destination} onSelect={setDestination} {...common} />
+        <AddressInput label="Arrivée" placeholder="Ville d'arrivée" icon={arriveeIcon} value={destination} onSelect={setDestination} {...common} />
+        <Divider />
+        {dateField}
         <button
-          onClick={() => canSearch && onSearch(origin!, destination!)}
+          onClick={() => canSearch && onSearch(origin!, destination!, departureDate)}
           disabled={!canSearch}
           style={btnStyle}
           onMouseEnter={(e) => { if (canSearch) (e.currentTarget as HTMLElement).style.background = "#D4563C"; }}

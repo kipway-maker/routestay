@@ -1,6 +1,6 @@
 "use client";
 
-export type HotelSource = "hotels_com" | "booking" | "tripadvisor";
+export type HotelSource = "hotels_com" | "booking" | "tripadvisor" | "osm";
 
 export interface Filters {
   maxPrice: number | null;
@@ -13,8 +13,8 @@ export interface Filters {
   sources: HotelSource[];
 }
 
-export const ALL_SOURCES: HotelSource[] = ["hotels_com", "booking", "tripadvisor"];
-export const ACTIVE_SOURCES: HotelSource[] = ["hotels_com", "booking", "tripadvisor"];
+export const ALL_SOURCES: HotelSource[] = ["osm", "booking", "hotels_com", "tripadvisor"];
+export const ACTIVE_SOURCES: HotelSource[] = ["osm", "booking", "hotels_com", "tripadvisor"];
 
 export const DEFAULT_FILTERS: Filters = {
   maxPrice: null,
@@ -27,10 +27,11 @@ export const DEFAULT_FILTERS: Filters = {
   sources: [...ACTIVE_SOURCES],
 };
 
-export const SOURCE_META: Record<HotelSource, { label: string; color: string }> = {
-  hotels_com:   { label: "Hotels.com",   color: "#C8102E" },
-  booking:      { label: "Booking.com",  color: "#003580" },
-  tripadvisor:  { label: "TripAdvisor",  color: "#34E0A1" },
+export const SOURCE_META: Record<HotelSource, { label: string; color: string; logo?: string }> = {
+  osm:          { label: "OpenStreetMap", color: "#7EBC6F" },
+  booking:      { label: "Booking.com",   color: "#003580" },
+  hotels_com:   { label: "Hotels.com",    color: "#C8102E" },
+  tripadvisor:  { label: "TripAdvisor",   color: "#34E0A1" },
 };
 
 const MAX_DETOUR_MIN = 60; // slider max

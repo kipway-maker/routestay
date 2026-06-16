@@ -10,6 +10,7 @@ import { Filters, DEFAULT_FILTERS } from "@/components/FilterBar";
 import FilterModal from "@/components/FilterModal";
 import FocusPointBand from "@/components/FocusPointBand";
 import HotelDetailOverlay from "@/components/HotelDetailOverlay";
+import SpotlightTutorial from "@/components/SpotlightTutorial";
 import { Hotel } from "@/lib/amadeus";
 
 const MapView = nextDynamic(() => import("@/components/MapView"), { ssr: false });
@@ -34,6 +35,124 @@ function SkeletonCard() {
       <div style={{ padding: "12px 14px" }}>
         <div style={{ height: "14px", background: "#e5e7eb", borderRadius: "6px", marginBottom: "8px", width: "70%", animation: "pulse 1.5s infinite" }} />
         <div style={{ height: "12px", background: "#e5e7eb", borderRadius: "6px", width: "45%", animation: "pulse 1.5s infinite" }} />
+      </div>
+    </div>
+  );
+}
+
+function CarLoader({ label = "Recherche en cours…" }: { label?: string }) {
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: "48px 24px", gap: "20px",
+    }}>
+      <style>{`
+        @keyframes kw-car-drive {
+          0%   { transform: translateX(-60px); opacity: 0; }
+          12%  { opacity: 1; }
+          78%  { opacity: 1; }
+          92%  { opacity: 0; transform: translateX(calc(100% + 60px)); }
+          100% { transform: translateX(-60px); opacity: 0; }
+        }
+        @keyframes kw-wheel {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes kw-road-dash {
+          from { stroke-dashoffset: 0; }
+          to   { stroke-dashoffset: -32; }
+        }
+        @keyframes kw-exhaust {
+          0%   { opacity: 0.7; transform: translateX(0) scale(1); }
+          100% { opacity: 0; transform: translateX(-18px) scale(1.8); }
+        }
+        @keyframes kw-loader-dots {
+          0%, 80%, 100% { opacity: 0.25; }
+          40%            { opacity: 1; }
+        }
+      `}</style>
+
+      {/* Scène */}
+      <div style={{ position: "relative", width: "220px", height: "72px", overflow: "hidden" }}>
+
+        {/* Route */}
+        <svg width="220" height="20" viewBox="0 0 220 20" style={{ position: "absolute", bottom: 0, left: 0 }}>
+          {/* Asphalte */}
+          <rect x="0" y="8" width="220" height="12" rx="4" fill="#E2E8F0"/>
+          {/* Tirets centraux animés */}
+          <line x1="0" y1="14" x2="220" y2="14"
+            stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round"
+            strokeDasharray="16 16"
+            style={{ animation: "kw-road-dash 0.5s linear infinite" }}
+          />
+        </svg>
+
+        {/* Voiture animée */}
+        <div style={{
+          position: "absolute", bottom: "10px", left: 0,
+          animation: "kw-car-drive 1.8s cubic-bezier(0.4,0,0.2,1) infinite",
+        }}>
+          {/* Fumée arrière (gauche = arrière de la voiture) */}
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{
+              position: "absolute",
+              left: "-4px", bottom: "14px",
+              width: i === 0 ? "6px" : i === 1 ? "5px" : "4px",
+              height: i === 0 ? "6px" : i === 1 ? "5px" : "4px",
+              borderRadius: "50%",
+              background: "rgba(148,163,184,0.55)",
+              animation: `kw-exhaust ${0.55 + i * 0.18}s ease-out ${i * 0.14}s infinite`,
+            }} />
+          ))}
+
+          {/* SVG voiture orientée → droite
+              Avant (droite) : capot bas et plat, phare rond
+              Arrière (gauche) : custode verticale, feu rouge
+              Habitacle : parebrise avant incliné vers la droite/avant */}
+          <svg width="80" height="36" viewBox="0 0 80 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Carrosserie basse */}
+            <path d="M6 20 Q6 18 8 18 L72 18 Q76 18 76 22 L76 30 Q76 32 74 32 L8 32 Q6 32 6 30 Z" fill="#D4563E"/>
+            {/* Habitacle —
+                Arrière (gauche) vertical : de x=16,y=18 monte à x=20,y=7
+                Toit plat de x=20 à x=52
+                Parebrise avant (droite) incliné vers l'avant : de x=52,y=7 descend à x=64,y=18 */}
+            <path d="M16 18 L22 7 L52 7 L64 18 Z" fill="#E8644A"/>
+            {/* Vitre arrière (gauche, petite) */}
+            <path d="M18 17 L23 8 L30 8 L30 17 Z" fill="rgba(255,255,255,0.28)"/>
+            {/* Vitre avant (droite, grande) */}
+            <path d="M32 17 L32 8 L51 8 L62 17 Z" fill="rgba(255,255,255,0.38)"/>
+            {/* Montant central */}
+            <line x1="31" y1="7" x2="31" y2="18" stroke="rgba(0,0,0,0.15)" strokeWidth="1.5"/>
+            {/* Custode arrière ombre */}
+            <path d="M16 18 L22 7" stroke="rgba(0,0,0,0.12)" strokeWidth="1.5" strokeLinecap="round"/>
+            {/* Phare avant (droite) */}
+            <ellipse cx="73" cy="23" rx="3" ry="2.2" fill="rgba(255,240,160,0.95)"/>
+            <ellipse cx="73" cy="23" rx="1.6" ry="1.1" fill="#fff"/>
+            {/* Feu arrière (gauche) */}
+            <rect x="4" y="22" width="4" height="5" rx="1.5" fill="rgba(200,30,30,0.85)"/>
+            {/* Roue avant (droite, x≈58) */}
+            <g style={{ transformOrigin: "59px 32px", animation: "kw-wheel 0.35s linear infinite" }}>
+              <circle cx="59" cy="32" r="7" fill="#1E1E2E"/>
+              <circle cx="59" cy="32" r="4.5" fill="#374151"/>
+              <circle cx="59" cy="32" r="2" fill="#6B7280"/>
+              <line x1="59" y1="26.5" x2="59" y2="37.5" stroke="#9CA3AF" strokeWidth="1.2"/>
+              <line x1="53.5" y1="32" x2="64.5" y2="32" stroke="#9CA3AF" strokeWidth="1.2"/>
+            </g>
+            {/* Roue arrière (gauche, x≈21) */}
+            <g style={{ transformOrigin: "21px 32px", animation: "kw-wheel 0.35s linear infinite" }}>
+              <circle cx="21" cy="32" r="7" fill="#1E1E2E"/>
+              <circle cx="21" cy="32" r="4.5" fill="#374151"/>
+              <circle cx="21" cy="32" r="2" fill="#6B7280"/>
+              <line x1="21" y1="26.5" x2="21" y2="37.5" stroke="#9CA3AF" strokeWidth="1.2"/>
+              <line x1="15.5" y1="32" x2="26.5" y2="32" stroke="#9CA3AF" strokeWidth="1.2"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      {/* Label */}
+      <div style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280" }}>
+        {label}
       </div>
     </div>
   );
@@ -102,21 +221,34 @@ export default function SearchPageClient() {
   const [destination, setDestination] = useState<Place | null>(null);
   const [route, setRoute] = useState<{ type: string; coordinates: [number, number][] } | null>(null);
   const [routeDurationSec, setRouteDurationSec] = useState<number>(0);
+  const [waypoints, setWaypoints] = useState<Array<{ lat: number; lng: number }>>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);       // chargement itinéraire
+  const [hotelLoading, setHotelLoading] = useState(false); // chargement hôtels
   const [selectedHotel, setSelectedHotel] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [departureTime, setDepartureTime] = useState<string>(getNowHHMM());
-  const [departureDate, setDepartureDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [departureDate, setDepartureDate] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("date");
+      if (p && /^\d{4}-\d{2}-\d{2}$/.test(p)) return p;
+    }
+    return new Date().toISOString().split("T")[0];
+  });
   const [useArrivalCheck, setUseArrivalCheck] = useState(false);
   const [filterReception24h, setFilterReception24h] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [expandedHotelId, setExpandedHotelId] = useState<string | null>(null);
-  // Milestone : position sur la route (0–100), null = pas de milestone actif
-  const [milestonePct, setMilestonePct] = useState<number | null>(null);
+  // Point d'étape : position sur la route (0–100), null avant le premier chargement
+  const [stopPct, setStopPct] = useState<number | null>(null);
+  const [flyToStop, setFlyToStop] = useState<{ lat: number; lng: number } | null>(null);
   const [hoverPct, setHoverPct] = useState<number | null>(null);
   const [hoverCity, setHoverCity] = useState<string | null>(null);
-  const [milestoneHovered, setMilestoneHovered] = useState(false);
+  const [stopPinHovered, setStopPinHovered] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [stopPinPulsing, setStopPinPulsing] = useState(false);
+  const [tutorialReady, setTutorialReady] = useState(false);
+  const isDraggingStop = useRef(false);
   const timelineRef = useRef<HTMLDivElement>(null);
   const reverseDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cityCache = useRef<Map<string, string>>(new Map());
@@ -166,9 +298,9 @@ export default function SearchPageClient() {
 
   const filteredHotels = useMemo(() => {
     let list = [...hotels];
-    // Filtre sources (hotels_com / booking / tripadvisor / osm / mock)
+    // Filtre sources
     if (filters.sources.length < 3)
-      list = list.filter((h) => filters.sources.includes(h.source as any) || h.source === "osm" || h.source === "mock");
+      list = list.filter((h) => filters.sources.includes(h.source as any) || h.source === "osm");
     if (filters.maxPrice !== null)
       list = list.filter((h) => h.pricePerNight !== null && h.pricePerNight <= filters.maxPrice!);
     if (filters.maxDetourMin !== null)
@@ -179,22 +311,14 @@ export default function SearchPageClient() {
       list = list.filter((h) => h.hasEVCharger);
     if (filterReception24h)
       list = list.filter((h) => h.checkinDeadline === null);
-    if (milestonePct !== null)
-      list = list.filter((h) => Math.abs(h.routePositionPct - milestonePct) <= 18);
     if (filters.accommodationType !== null)
       list = list.filter((h) => h.accommodationType === filters.accommodationType);
-    if (filters.routePosition !== "all") {
-      const ranges = { start: [0, 33], mid: [34, 66], end: [67, 100] } as Record<string, [number, number]>;
-      const [min, max] = ranges[filters.routePosition] ?? [0, 100];
-      list = list.filter((h) => h.routePositionPct >= min && h.routePositionPct <= max);
-    }
     if (filters.sortBy === "price_asc")
       list.sort((a, b) => (a.pricePerNight ?? 999) - (b.pricePerNight ?? 999));
     else if (filters.sortBy === "rating_desc")
       list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     else if (filters.sortBy === "detour_asc")
       list.sort((a, b) => a.detourMinutes - b.detourMinutes);
-    // Quand le check arrivée est actif, les "late" vont en bas
     if (useArrivalCheck) {
       list.sort((a, b) => {
         const rank = { ok: 0, always: 0, tight: 1, late: 2 };
@@ -203,18 +327,51 @@ export default function SearchPageClient() {
     }
     return list;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hotels, filters, filterReception24h, milestonePct, useArrivalCheck, departureTime, routeDurationSec]);
+  }, [hotels, filters, filterReception24h, useArrivalCheck, departureTime, routeDurationSec]);
 
   function toggleHotel(id: string) {
     setSelectedHotel((prev) => (prev === id ? null : id));
   }
 
+  function markInteracted() {
+    if (!hasInteracted) { setHasInteracted(true); setStopPinPulsing(false); }
+  }
+
+  /** Fetch hôtels autour d'un point précis de la route */
+  async function fetchHotelsAt(pct: number, wpts: Array<{ lat: number; lng: number }>) {
+    if (!wpts.length) return;
+    const idx = Math.min(wpts.length - 1, Math.floor((pct / 100) * wpts.length));
+    const stopPoint = wpts[idx];
+    setFlyToStop(null); // reset pour que le prochain résultat retrigger l'effet
+    setHotelLoading(true);
+    setHotels([]);
+    setSelectedHotel(null);
+    try {
+      const res = await fetch("/api/hotels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stopPoint, stopPct: pct, departureDate, sources: filters.sources }),
+      });
+      if (res.ok) {
+        setHotels(await res.json());
+        setTutorialReady(true);
+        setFlyToStop({ lat: stopPoint.lat, lng: stopPoint.lng });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setHotelLoading(false);
+    }
+  }
+
   async function runSearch(org: Place, dest: Place) {
     setLoading(true);
     setHotels([]);
+    setWaypoints([]);
     setSelectedHotel(null);
     setRoute(null);
     setRouteDurationSec(0);
+    setStopPct(null);
     setFilters(DEFAULT_FILTERS);
     try {
       const dirRes = await fetch("/api/directions", {
@@ -226,27 +383,30 @@ export default function SearchPageClient() {
       const dirData = await dirRes.json();
       setRoute(dirData.geometry);
       setRouteDurationSec(dirData.duration ?? 0);
-
-      const hotelRes = await fetch("/api/hotels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ points: dirData.waypoints, departureDate, sources: filters.sources }),
-      });
-      if (!hotelRes.ok) { setLoading(false); return; }
-      setHotels(await hotelRes.json());
+      const wpts: Array<{ lat: number; lng: number }> = dirData.waypoints ?? [];
+      setWaypoints(wpts);
+      setLoading(false);
+      setHasInteracted(false);
+      // Point d'étape par défaut : milieu du trajet — pulse pour attirer l'attention
+      setStopPct(50);
+      setStopPinPulsing(true);
+      setTimeout(() => setStopPinPulsing(false), 4000);
+      await fetchHotelsAt(50, wpts);
     } catch (err) {
       console.error(err);
-    } finally {
       setLoading(false);
     }
   }
 
-  function handleSearch(org: Place, dest: Place) {
+  function handleSearch(org: Place, dest: Place, date?: string) {
     setOrigin(org);
     setDestination(dest);
+    if (date) setDepartureDate(date);
+    setTutorialReady(false);
     const params = new URLSearchParams({
       fromName: org.name, fromLat: String(org.lat), fromLng: String(org.lng),
       toName: dest.name, toLat: String(dest.lat), toLng: String(dest.lng),
+      date: date ?? departureDate,
     });
     router.replace(`/search?${params.toString()}`);
     runSearch(org, dest);
@@ -256,6 +416,21 @@ export default function SearchPageClient() {
   const activeFilters = activeFilterCount(filters);
 
   return (
+    <>
+    <style>{`
+      @keyframes kw-hint-fade {
+        from { opacity: 0; transform: translateX(6px); }
+        to   { opacity: 1; transform: translateX(0); }
+      }
+      @keyframes kw-pulse {
+        0%   { transform: scale(1); opacity: 0.7; }
+        100% { transform: scale(2.8); opacity: 0; }
+      }
+      @keyframes kw-pin-pulse {
+        0%, 100% { box-shadow: 0 0 0 3px rgba(232,100,74,0.25); }
+        50%       { box-shadow: 0 0 0 8px rgba(232,100,74,0.0); }
+      }
+    `}</style>
     <div ref={containerRef} style={{
       display: "flex", height: "100vh", width: "100%", overflow: "hidden",
       background: "#F8F7F4",
@@ -287,32 +462,6 @@ export default function SearchPageClient() {
           {/* Gradient top border */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #E8644A, #F09070, #6FA8C0)" }} />
 
-          {/* Ruban qui continue le fil du logo vers la droite, passe DERRIÈRE l'input */}
-          <svg
-            style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }}
-            preserveAspectRatio="none"
-            viewBox="0 0 800 80"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {/* Ruban principal : part du bord droit du logo (~110px) au niveau du fil (~62% de hauteur = y≈50) */}
-            <path
-              d="M 108,50 C 140,46 180,54 240,49 C 310,43 380,55 460,49 C 530,44 620,52 720,48 C 760,46 790,48 820,47"
-              fill="none"
-              stroke="#C1622A"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              opacity="0.55"
-            />
-            {/* Ombre légère en dessous pour l'effet de profondeur */}
-            <path
-              d="M 108,52 C 140,48 180,56 240,51 C 310,45 380,57 460,51 C 530,46 620,54 720,50 C 760,48 790,50 820,49"
-              fill="none"
-              stroke="#C1622A"
-              strokeWidth="1"
-              strokeLinecap="round"
-              opacity="0.18"
-            />
-          </svg>
 
           <Link href="/" style={{ textDecoration: "none", flexShrink: 0, position: "relative", zIndex: 3 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -364,23 +513,52 @@ export default function SearchPageClient() {
         {/* ── BANDE ROUTE + FILTRES RAPIDES ── */}
         {routeDurationMin > 0 && (
           <div style={{
-            padding: "16px 20px 14px",
-            background: "rgba(255,255,255,0.75)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            padding: "14px 20px 14px",
+            background: "rgba(255,255,255,0.82)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            borderBottom: "1px solid rgba(0,0,0,0.07)",
             flexShrink: 0,
           }}>
+            {/* Label section — hiérarchie principale */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "7px", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8644A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12h18M12 3l9 9-9 9"/>
+                </svg>
+                <span style={{ fontSize: "13px", fontWeight: 800, color: "#1E1E2E", letterSpacing: "0.01em", fontFamily: "var(--font-nunito), sans-serif" }}>
+                  Votre étape
+                </span>
+                {stopPct !== null && !hotelLoading && (
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#E8644A" }}>
+                    — {getTimeAtPct(stopPct)}
+                  </span>
+                )}
+              </div>
+
+              {/* Hint — toujours visible, guide l'utilisateur */}
+              <span style={{
+                fontSize: "12px", fontStyle: "italic",
+                color: hasInteracted ? "#C0C8D4" : "#6FA8C0",
+                fontWeight: hasInteracted ? 400 : 600,
+                transition: "color 0.4s, font-weight 0.4s",
+                flexShrink: 1, textAlign: "right", lineHeight: 1.3,
+              }}>
+                {hasInteracted ? "Bougez le curseur ou recliquez" : "👆 Glissez la ligne ou cliquez sur la carte"}
+              </span>
+
+            </div>
+
             {/* ── Timeline départ → durée → arrivée ── */}
             <div style={{
-              background: "rgba(255,255,255,0.20)",
+              background: "rgba(255,255,255,0.55)",
               backdropFilter: "blur(40px)",
               WebkitBackdropFilter: "blur(40px)",
-              borderRadius: "16px",
-              padding: "14px 18px 12px",
-              marginBottom: "14px",
-              border: "1px solid rgba(255,255,255,0.45)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)",
+              borderRadius: "18px",
+              padding: "16px 20px 14px",
+              marginBottom: "12px",
+              border: "1px solid rgba(232,100,74,0.12)",
+              boxShadow: "0 6px 24px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0" }}>
 
@@ -403,17 +581,29 @@ export default function SearchPageClient() {
                       width: "108px", marginBottom: "2px",
                     }}
                   />
-                  <input
-                    type="date"
-                    value={departureDate}
-                    onChange={(e) => setDepartureDate(e.target.value)}
-                    style={{
-                      border: "none", background: "transparent", padding: 0,
-                      fontSize: "10px", fontWeight: 600, color: "#6B7280",
-                      outline: "none", cursor: "pointer",
-                      fontFamily: "var(--font-inter), sans-serif",
+                  {/* Date — badge visible cliquable */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", position: "relative" }}>
+                    <span style={{
+                      fontSize: "11px", fontWeight: 700, color: "#E8644A",
+                      background: "rgba(232,100,74,0.10)",
+                      border: "1px solid rgba(232,100,74,0.25)",
+                      borderRadius: "6px", padding: "2px 7px",
+                      cursor: "pointer", whiteSpace: "nowrap",
                     }}
-                  />
+                      onClick={() => (document.getElementById("kw-date-input") as HTMLInputElement)?.showPicker?.()}
+                    >
+                      {new Date(departureDate + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}
+                    </span>
+                    <input
+                      id="kw-date-input"
+                      type="date"
+                      value={departureDate}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setDepartureDate(e.target.value)}
+                      style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+                      tabIndex={-1}
+                    />
+                  </div>
                 </div>
 
                 {/* Ligne interactive */}
@@ -425,11 +615,19 @@ export default function SearchPageClient() {
                       : `${routeDurationMin} min`}
                   </div>
 
-                  {/* Track cliquable */}
+                  {/* Track — clic ou drag pour déplacer le point d'étape */}
                   <div
                     ref={timelineRef}
-                    style={{ position: "relative", height: "36px", cursor: "pointer", display: "flex", alignItems: "center" }}
+                    data-tutorial="timeline"
+                    style={{ position: "relative", height: "36px", cursor: stopPct !== null ? "pointer" : "default", display: "flex", alignItems: "center" }}
                     onMouseMove={(e) => {
+                      if (isDraggingStop.current) {
+                        const rect = timelineRef.current!.getBoundingClientRect();
+                        const pct = Math.max(2, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+                        setStopPct(pct);
+                        return;
+                      }
+                      if (!stopPct) return;
                       const rect = timelineRef.current!.getBoundingClientRect();
                       const pct = Math.max(2, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
                       setHoverPct(pct);
@@ -440,42 +638,54 @@ export default function SearchPageClient() {
                         const idx = Math.min(coords.length - 1, Math.floor((pct / 100) * coords.length));
                         const [lng, lat] = coords[idx];
                         const cacheKey = `${lat.toFixed(2)},${lng.toFixed(2)}`;
-                        if (cityCache.current.has(cacheKey)) {
-                          setHoverCity(cityCache.current.get(cacheKey)!);
-                          return;
-                        }
+                        if (cityCache.current.has(cacheKey)) { setHoverCity(cityCache.current.get(cacheKey)!); return; }
                         fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`)
                           .then((r) => r.json())
-                          .then(({ city }) => {
-                            if (city) { cityCache.current.set(cacheKey, city); setHoverCity(city); }
-                          }).catch(() => {});
-                      }, 380);
+                          .then(({ city }) => { if (city) { cityCache.current.set(cacheKey, city); setHoverCity(city); } })
+                          .catch(() => {});
+                      }, 300);
+                    }}
+                    onMouseUp={(e) => {
+                      if (!isDraggingStop.current) return;
+                      isDraggingStop.current = false;
+                      const rect = timelineRef.current!.getBoundingClientRect();
+                      const pct = Math.max(2, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+                      setStopPct(pct);
+                      markInteracted();
+                      fetchHotelsAt(pct, waypoints);
                     }}
                     onMouseLeave={() => {
                       setHoverPct(null); setHoverCity(null);
                       if (reverseDebounceRef.current) clearTimeout(reverseDebounceRef.current);
+                      if (isDraggingStop.current) {
+                        isDraggingStop.current = false;
+                        if (stopPct !== null) fetchHotelsAt(stopPct, waypoints);
+                      }
                     }}
                     onClick={(e) => {
+                      if (!waypoints.length || isDraggingStop.current) return;
                       const rect = timelineRef.current!.getBoundingClientRect();
                       const pct = Math.max(2, Math.min(98, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
-                      setMilestonePct((prev) => (prev !== null && Math.abs(prev - pct) < 6 ? null : pct));
+                      setStopPct(pct);
+                      markInteracted();
+                      fetchHotelsAt(pct, waypoints);
                     }}
                   >
-                    {/* Rail + remplissage */}
+                    {/* Rail */}
                     <div style={{ position: "absolute", left: 0, right: 0, height: "2px", background: "#E2E8F0", borderRadius: "2px", top: "50%", transform: "translateY(-50%)" }}>
-                      {milestonePct !== null && (
-                        <div style={{ position: "absolute", left: 0, width: `${milestonePct}%`, height: "100%", background: "linear-gradient(to right, #E8644A, #F09070)", borderRadius: "2px", transition: "width 0.15s" }} />
+                      {stopPct !== null && (
+                        <div style={{ position: "absolute", left: 0, width: `${stopPct}%`, height: "100%", background: "linear-gradient(to right, #E8644A, #F09070)", borderRadius: "2px" }} />
                       )}
                     </div>
                     {/* Point départ */}
                     <div style={{ position: "absolute", left: 0, width: "7px", height: "7px", borderRadius: "50%", background: "#CBD5E1", top: "50%", transform: "translateY(-50%)" }} />
-                    {/* Flèche fin — SVG alignée exactement sur le rail */}
+                    {/* Flèche arrivée */}
                     <svg style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)" }} width="10" height="10" viewBox="0 0 10 10" fill="none">
                       <path d="M1 5H9M9 5L5.5 1.5M9 5L5.5 8.5" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
 
-                    {/* Hover : voiture — masqué quand on survole le pin repère */}
-                    {hoverPct !== null && !milestoneHovered && (
+                    {/* Hover tooltip — masqué pendant le drag et sur le pin */}
+                    {hoverPct !== null && !stopPinHovered && !isDraggingStop.current && (
                       <div style={{ position: "absolute", left: `${hoverPct}%`, transform: "translateX(-50%)", pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", transition: "left 0.04s linear" }}>
                         {hoverCity && (
                           <div style={{ background: "rgba(26,26,46,0.75)", color: "#fff", fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: "8px", whiteSpace: "nowrap", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", marginBottom: "2px" }}>
@@ -490,27 +700,46 @@ export default function SearchPageClient() {
                       </div>
                     )}
 
-                    {/* Repère posé — hover → "Retirer le repère" */}
-                    {milestonePct !== null && (
+                    {/* Pin d'étape — draggable, affiche ✕ au hover */}
+                    {stopPct !== null && (
                       <div
-                        style={{ position: "absolute", left: `${milestonePct}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", zIndex: 10 }}
-                        onMouseEnter={() => setMilestoneHovered(true)}
-                        onMouseLeave={() => setMilestoneHovered(false)}
-                        onClick={(e) => { e.stopPropagation(); setMilestonePct(null); setMilestoneHovered(false); }}
+                        style={{ position: "absolute", left: `${stopPct}%`, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "grab", zIndex: 10, userSelect: "none" }}
+                        onMouseEnter={() => setStopPinHovered(true)}
+                        onMouseLeave={() => setStopPinHovered(false)}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          isDraggingStop.current = true;
+                          (e.currentTarget as HTMLElement).style.cursor = "grabbing";
+                        }}
+                        onMouseUp={(e) => {
+                          e.stopPropagation();
+                          if (!isDraggingStop.current) return;
+                          isDraggingStop.current = false;
+                          (e.currentTarget as HTMLElement).style.cursor = "grab";
+                          fetchHotelsAt(stopPct, waypoints);
+                        }}
                       >
-                        {/* Bulle heure → "Retirer" au hover */}
-                        <div style={{
-                          background: milestoneHovered ? "#1E1E2E" : "#E8644A",
-                          color: "#fff", fontSize: "11px", fontWeight: 800,
-                          padding: "4px 10px", borderRadius: "10px", whiteSpace: "nowrap",
-                          boxShadow: milestoneHovered ? "0 3px 12px rgba(0,0,0,0.25)" : "0 3px 12px rgba(255,98,64,0.45)",
-                          fontFamily: "var(--font-nunito), sans-serif", marginBottom: "2px",
-                          transition: "background 0.15s, box-shadow 0.15s",
-                        }}>
-                          {milestoneHovered ? "✕ Retirer" : getTimeAtPct(milestonePct)}
+                        <div
+                          onClick={(e) => {
+                            if (stopPinHovered && !isDraggingStop.current) {
+                              e.stopPropagation();
+                              setStopPct(null); setHotels([]); setHasInteracted(false); setFlyToStop(null);
+                            }
+                          }}
+                          style={{
+                            background: stopPinHovered && !hotelLoading ? "#EF4444" : hotelLoading ? "#9CA3AF" : "#E8644A",
+                            color: "#fff", fontSize: "11px", fontWeight: 800,
+                            padding: "4px 10px", borderRadius: "10px", whiteSpace: "nowrap",
+                            boxShadow: stopPinHovered && !hotelLoading ? "0 3px 12px rgba(239,68,68,0.45)" : hotelLoading ? "0 3px 8px rgba(0,0,0,0.15)" : "0 3px 12px rgba(255,98,64,0.45)",
+                            fontFamily: "var(--font-nunito), sans-serif", marginBottom: "2px",
+                            transition: "background 0.15s, box-shadow 0.15s",
+                            cursor: stopPinHovered ? "pointer" : "grab",
+                          }}
+                        >
+                          {stopPinHovered && !hotelLoading ? "✕ Retirer" : getTimeAtPct(stopPct)}
                         </div>
-                        <div style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `6px solid ${milestoneHovered ? "#1E1E2E" : "#E8644A"}`, marginBottom: "1px", transition: "border-top-color 0.15s" }} />
-                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: milestoneHovered ? "#1E1E2E" : "#E8644A", border: "2px solid #fff", boxShadow: "0 0 0 3px rgba(255,98,64,0.25)", transition: "background 0.15s" }} />
+                        <div style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `6px solid ${stopPinHovered && !hotelLoading ? "#EF4444" : hotelLoading ? "#9CA3AF" : "#E8644A"}`, marginBottom: "1px", transition: "border-top-color 0.15s" }} />
+                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: hotelLoading ? "#9CA3AF" : "#E8644A", border: "2px solid #fff", boxShadow: "0 0 0 3px rgba(255,98,64,0.25)", transition: "background 0.2s", animation: stopPinPulsing && !hotelLoading ? "kw-pin-pulse 1.4s ease-in-out infinite" : undefined }} />
                       </div>
                     )}
                   </div>
@@ -653,13 +882,11 @@ export default function SearchPageClient() {
           padding: "10px 16px 6px", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          {loading ? (
-            <p style={{ fontSize: "13px", color: "#6B7280" }}>Recherche des hôtels en cours...</p>
-          ) : hotels.length > 0 ? (
+          {!hotelLoading && hotels.length > 0 ? (
             <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <p style={{ fontSize: "15px", fontWeight: 700, color: "#1E1E2E", fontFamily: "var(--font-nunito)", margin: 0 }}>
               <span style={{ color: "#E8644A", fontSize: "20px", fontWeight: 900 }}>{filteredHotels.length}</span>{" "}
-              hôtel{filteredHotels.length !== 1 ? "s" : ""}{milestonePct !== null ? ` autour de ${getTimeAtPct(milestonePct)}` : " sur votre route"}
+              hôtel{filteredHotels.length !== 1 ? "s" : ""}{stopPct !== null ? ` autour de ${getTimeAtPct(stopPct)}` : ""}
               {filteredHotels.length < hotels.length && (
                 <span style={{ fontSize: "12px", color: "#6B7280", fontWeight: 400 }}>
                   {" "}(sur {hotels.length})
@@ -672,10 +899,10 @@ export default function SearchPageClient() {
 
         {/* Grille */}
         <div className="scroll-stable" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 16px 20px", minWidth: 0 }}>
-          {loading ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
+          {hotelLoading ? (
+            <CarLoader label="Recherche des hôtels" />
+          ) : loading ? (
+            <CarLoader label="Calcul de l'itinéraire" />
           ) : filteredHotels.length === 0 && hotels.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px", color: "#6B7280", textAlign: "center" }}>
               <div style={{ fontSize: "36px", marginBottom: "12px" }}>🔍</div>
@@ -683,7 +910,7 @@ export default function SearchPageClient() {
               <p style={{ fontSize: "13px" }}>Essayez d&apos;élargir vos filtres</p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: getGridCols(splitPct), gap: "12px" }}>
+            <div data-tutorial="hotels" style={{ display: "grid", gridTemplateColumns: getGridCols(splitPct), gap: "12px" }}>
               {filteredHotels.map((hotel) => {
                 const status = getCheckinStatus(hotel);
                 return (
@@ -760,7 +987,7 @@ export default function SearchPageClient() {
       </div>
 
       {/* ── CARTE — droite ── */}
-      <div style={{ flex: 1, position: "relative", minWidth: 0 }}>
+      <div data-tutorial="map" style={{ flex: 1, position: "relative", minWidth: 0 }}>
         <MapView
           route={route}
           hotels={filteredHotels}
@@ -769,6 +996,16 @@ export default function SearchPageClient() {
           selectedHotelId={selectedHotel}
           onSelectHotel={toggleHotel}
           onExpandHotel={(id) => { toggleHotel(id); setExpandedHotelId(id); }}
+          stopPct={stopPct}
+          waypoints={waypoints}
+          onRouteClick={(pct) => {
+            setStopPct(pct);
+            markInteracted();
+            fetchHotelsAt(pct, waypoints);
+          }}
+          getTimeAtPct={getTimeAtPct}
+          stopPinPulsing={stopPinPulsing}
+          flyToStop={flyToStop}
         />
       </div>
 
@@ -795,5 +1032,9 @@ export default function SearchPageClient() {
         ) : null;
       })()}
     </div>
+
+    {/* ── TUTORIEL PREMIÈRE VISITE ── */}
+    <SpotlightTutorial ready={tutorialReady} />
+    </>
   );
 }

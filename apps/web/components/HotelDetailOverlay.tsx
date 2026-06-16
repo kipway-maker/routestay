@@ -27,6 +27,8 @@ function timeToMin(t: string): number {
 export default function HotelDetailOverlay({ hotel, estimatedArrival, departureDate, onClose }: Props) {
   const photos = hotel.images?.length ? hotel.images : [hotel.imageUrl];
   const [photoIdx, setPhotoIdx] = useState(0);
+  const [photoHover, setPhotoHover] = useState(false);
+  const [hoveredArrow, setHoveredArrow] = useState<"left" | "right" | null>(null);
   const [copied, setCopied] = useState(false);
 
   const isLate = !!(
@@ -102,7 +104,11 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
       }}>
 
         {/* ── CAROUSEL ── */}
-        <div style={{ position: "relative", height: "260px", flexShrink: 0, background: "#f3f4f6" }}>
+        <div
+          style={{ position: "relative", height: "260px", flexShrink: 0, background: "#f3f4f6" }}
+          onMouseEnter={() => setPhotoHover(true)}
+          onMouseLeave={() => { setPhotoHover(false); setHoveredArrow(null); }}
+        >
           <img
             key={photoIdx}
             src={photos[photoIdx]}
@@ -111,51 +117,66 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
           />
 
-          {/* Prev / Next arrows */}
-          {photos.length > 1 && (
-            <>
-              <button
-                onClick={() => setPhotoIdx((i) => (i - 1 + photos.length) % photos.length)}
-                style={{
-                  position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)",
-                  width: "34px", height: "34px", borderRadius: "50%",
-                  background: "rgba(255,255,255,0.88)", border: "none", cursor: "pointer",
-                  fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", color: "#1E1E2E",
-                }}
-              >‹</button>
-              <button
-                onClick={() => setPhotoIdx((i) => (i + 1) % photos.length)}
-                style={{
-                  position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)",
-                  width: "34px", height: "34px", borderRadius: "50%",
-                  background: "rgba(255,255,255,0.88)", border: "none", cursor: "pointer",
-                  fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)", color: "#1E1E2E",
-                }}
-              >›</button>
+          {/* Flèche gauche */}
+          {photoHover && (
+            <button
+              onMouseEnter={() => setHoveredArrow("left")}
+              onMouseLeave={() => setHoveredArrow(null)}
+              onClick={() => setPhotoIdx((i) => Math.max(0, i - 1))}
+              style={{
+                position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)",
+                width: "36px", height: "36px", borderRadius: "50%", border: "none", outline: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: photoIdx > 0 ? "pointer" : "default",
+                background: hoveredArrow === "left" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.22)",
+                boxShadow: hoveredArrow === "left" ? "0 0 0 10px rgba(255,255,255,0.18), 0 2px 12px rgba(0,0,0,0.15)" : "none",
+                opacity: hoveredArrow === "left" ? 1 : 0.4,
+                transition: "background 0.12s, box-shadow 0.12s, opacity 0.12s",
+                fontSize: "18px", fontWeight: 700,
+                color: hoveredArrow === "left" ? "#1E1E2E" : "#fff",
+              }}
+            >‹</button>
+          )}
+          {/* Flèche droite */}
+          {photoHover && (
+            <button
+              onMouseEnter={() => setHoveredArrow("right")}
+              onMouseLeave={() => setHoveredArrow(null)}
+              onClick={() => setPhotoIdx((i) => Math.min(photos.length - 1, i + 1))}
+              style={{
+                position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)",
+                width: "36px", height: "36px", borderRadius: "50%", border: "none", outline: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: photoIdx < photos.length - 1 ? "pointer" : "default",
+                background: hoveredArrow === "right" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.22)",
+                boxShadow: hoveredArrow === "right" ? "0 0 0 10px rgba(255,255,255,0.18), 0 2px 12px rgba(0,0,0,0.15)" : "none",
+                opacity: hoveredArrow === "right" ? 1 : 0.4,
+                transition: "background 0.12s, box-shadow 0.12s, opacity 0.12s",
+                fontSize: "18px", fontWeight: 700,
+                color: hoveredArrow === "right" ? "#1E1E2E" : "#fff",
+              }}
+            >›</button>
+          )}
 
-              {/* Dots */}
-              <div style={{
-                position: "absolute", bottom: "48px", left: "50%", transform: "translateX(-50%)",
-                display: "flex", gap: "6px",
-              }}>
-                {photos.map((_, k) => (
-                  <button
-                    key={k}
-                    onClick={() => setPhotoIdx(k)}
-                    style={{
-                      width: k === photoIdx ? "18px" : "6px",
-                      height: "6px",
-                      borderRadius: "3px",
-                      background: k === photoIdx ? "#E8644A" : "rgba(255,255,255,0.7)",
-                      border: "none", cursor: "pointer", padding: 0,
-                      transition: "width 0.2s",
-                    }}
-                  />
-                ))}
-              </div>
-            </>
+          {/* Dots */}
+          {photos.length > 1 && (
+            <div style={{
+              position: "absolute", bottom: "48px", left: "50%", transform: "translateX(-50%)",
+              display: "flex", gap: "6px",
+            }}>
+              {photos.map((_, k) => (
+                <button
+                  key={k}
+                  onClick={() => setPhotoIdx(k)}
+                  style={{
+                    width: k === photoIdx ? "18px" : "6px",
+                    height: "6px", borderRadius: "3px",
+                    background: k === photoIdx ? "#E8644A" : "rgba(255,255,255,0.7)",
+                    border: "none", cursor: "pointer", padding: 0, transition: "width 0.2s",
+                  }}
+                />
+              ))}
+            </div>
           )}
 
           {/* Top-right buttons: close + share */}

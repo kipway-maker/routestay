@@ -47,6 +47,11 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [spot, setSpot] = useState({ x: 50, y: 50, on: false });
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const [photoHover, setPhotoHover] = useState(false);
+
+  const images: string[] = hotel.images?.length ? hotel.images : [hotel.imageUrl];
+  const photoCount = images.length;
 
   const isLate  = !!(estimatedArrival && hotel.checkinDeadline && timeToMin(estimatedArrival) > timeToMin(hotel.checkinDeadline));
   const isTight = !isLate && !!(estimatedArrival && hotel.checkinDeadline && timeToMin(hotel.checkinDeadline) - timeToMin(estimatedArrival) <= 60);
@@ -108,17 +113,54 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
         <div style={{ height: "3px", background: "linear-gradient(90deg,#E8644A,#F09070,#6FA8C0)", position: "relative", zIndex: 3 }} />
       )}
 
-      {/* ── Photo ── */}
-      <div style={{ position: "relative", width: "100%", paddingBottom: "60%" }}>
-        <img
-          src={hotel.imageUrl}
-          alt={hotel.name}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-          loading="lazy"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
-        />
+      {/* ── Photos (carrousel position-based) ── */}
+      <div
+        style={{ position: "relative", width: "100%", paddingBottom: "60%" }}
+        onMouseEnter={() => setPhotoHover(true)}
+        onMouseLeave={() => { setPhotoHover(false); setPhotoIdx(0); }}
+        onMouseMove={(e) => {
+          if (photoCount <= 1) return;
+          const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+          const pct = (e.clientX - rect.left) / rect.width;
+          setPhotoIdx(Math.min(photoCount - 1, Math.floor(pct * photoCount)));
+        }}
+      >
+        {images.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt={`${hotel.name} — photo ${i + 1}`}
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+              opacity: i === photoIdx ? 1 : 0,
+              transition: "opacity 0.2s ease",
+            }}
+            loading="lazy"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
+          />
+        ))}
+
         {/* Overlay gradient bas */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "60%", background: "linear-gradient(to top, rgba(0,0,0,0.45), transparent)", pointerEvents: "none" }} />
+
+
+        {/* Dots navigation */}
+        {photoCount > 1 && photoHover && (
+          <div style={{
+            position: "absolute", bottom: "8px", left: "50%", transform: "translateX(-50%)",
+            display: "flex", gap: "5px", zIndex: 2, pointerEvents: "none",
+          }}>
+            {images.map((_, i) => (
+              <div key={i} style={{
+                width: i === photoIdx ? "16px" : "5px", height: "5px",
+                borderRadius: "3px",
+                background: i === photoIdx ? "#fff" : "rgba(255,255,255,0.5)",
+                transition: "width 0.2s, background 0.2s",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+              }} />
+            ))}
+          </div>
+        )}
 
         {/* Badges haut-gauche */}
         <div style={{ position: "absolute", top: "8px", left: "8px", display: "flex", flexDirection: "column", gap: "4px", zIndex: 1 }}>

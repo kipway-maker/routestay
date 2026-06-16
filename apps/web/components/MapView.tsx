@@ -28,6 +28,40 @@ function createPriceHTML(price: number | null, selected: boolean) {
   ">${label}</div>`;
 }
 
+function createStopMarkerHTML(label: string, pulsing: boolean) {
+  return `
+    <div style="display:flex;flex-direction:column;align-items:center;pointer-events:none;user-select:none">
+      <div style="
+        background:#E8644A;color:#fff;
+        font-size:12px;font-weight:800;
+        padding:5px 13px;border-radius:10px;
+        white-space:nowrap;
+        box-shadow:0 3px 16px rgba(232,100,74,0.55);
+        font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+        margin-bottom:3px;
+        letter-spacing:0.02em;
+      ">${label}</div>
+      <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #E8644A;margin-bottom:2px"></div>
+      <div style="position:relative;width:14px;height:14px">
+        ${pulsing ? `
+          <div style="
+            position:absolute;inset:-6px;
+            border-radius:50%;
+            background:rgba(232,100,74,0.25);
+            animation:kw-pulse 1.6s ease-out infinite;
+          "></div>
+        ` : ""}
+        <div style="
+          position:relative;
+          width:14px;height:14px;border-radius:50%;
+          background:#E8644A;border:2.5px solid #fff;
+          box-shadow:0 0 0 3px rgba(232,100,74,0.35);
+        "></div>
+      </div>
+    </div>
+  `;
+}
+
 interface MapViewProps {
   route: { type: string; coordinates: [number, number][] } | null;
   hotels: Hotel[];
@@ -36,20 +70,41 @@ interface MapViewProps {
   selectedHotelId: string | null;
   onSelectHotel: (id: string) => void;
   onExpandHotel: (id: string) => void;
+  // Point d'étape — synchronisation map ↔ timeline
+  stopPct: number | null;
+  waypoints: Array<{ lat: number; lng: number }>;
+  onRouteClick: (pct: number) => void;
+  getTimeAtPct: (pct: number) => string;
+  stopPinPulsing?: boolean;
+  flyToStop?: { lat: number; lng: number } | null;
 }
 
-export default function MapView({ route, hotels, origin, destination, selectedHotelId, onSelectHotel, onExpandHotel }: MapViewProps) {
+export default function MapView({
+  route, hotels, origin, destination, selectedHotelId,
+  onSelectHotel, onExpandHotel,
+  stopPct, waypoints, onRouteClick, getTimeAtPct, stopPinPulsing = false,
+  flyToStop,
+}: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const popupsRef = useRef<Map<string, maplibregl.Popup>>(new Map());
+  const stopMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const routeHoverPopupRef = useRef<maplibregl.Popup | null>(null);
 
-  // Keep callbacks in refs so marker event listeners always call the latest version
-  // without needing to be in the dependency array (avoids marker recreation on every render)
+  // Stable refs for callbacks
   const onSelectRef = useRef(onSelectHotel);
   const onExpandRef = useRef(onExpandHotel);
+  const onRouteClickRef = useRef(onRouteClick);
+  const getTimeAtPctRef = useRef(getTimeAtPct);
+  const waypointsRef = useRef(waypoints);
+  const routeRef = useRef(route);
   useEffect(() => { onSelectRef.current = onSelectHotel; }, [onSelectHotel]);
   useEffect(() => { onExpandRef.current = onExpandHotel; }, [onExpandHotel]);
+  useEffect(() => { onRouteClickRef.current = onRouteClick; }, [onRouteClick]);
+  useEffect(() => { getTimeAtPctRef.current = getTimeAtPct; }, [getTimeAtPct]);
+  useEffect(() => { waypointsRef.current = waypoints; }, [waypoints]);
+  useEffect(() => { routeRef.current = route; }, [route]);
 
   // Init map
   useEffect(() => {
@@ -66,28 +121,107 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
     map.addControl(new maplibregl.NavigationControl(), "top-left");
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
+    // Popup réutilisable pour le hover route
+    const hoverPopup = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      closeOnMove: false,
+      offset: [0, -8],
+      maxWidth: "none",
+    });
+    routeHoverPopupRef.current = hoverPopup;
+
     map.on("load", () => {
-      map.addSource("route", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } } });
-      // Halo blanc derrière la ligne pour la faire ressortir sur toutes les tuiles
-      map.addLayer({ id: "route-line-halo", type: "line", source: "route",
+      map.addSource("route", {
+        type: "geojson",
+        data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [] } },
+      });
+
+      // Halo blanc
+      map.addLayer({
+        id: "route-line-halo", type: "line", source: "route",
         paint: { "line-color": "#ffffff", "line-width": 11, "line-opacity": 0.6 },
         layout: { "line-cap": "round", "line-join": "round" },
       });
-      map.addLayer({ id: "route-line", type: "line", source: "route",
+      // Ligne orange principale
+      map.addLayer({
+        id: "route-line", type: "line", source: "route",
         paint: { "line-color": "#E8644A", "line-width": 7, "line-opacity": 1 },
         layout: { "line-cap": "round", "line-join": "round" },
+      });
+      // Zone de hit invisible — plus large pour faciliter le clic
+      map.addLayer({
+        id: "route-line-hit", type: "line", source: "route",
+        paint: { "line-color": "#E8644A", "line-width": 28, "line-opacity": 0.001 },
+        layout: { "line-cap": "round", "line-join": "round" },
+      });
+
+      // Curseur sur hover de la route
+      map.on("mouseenter", "route-line-hit", () => {
+        map.getCanvas().style.cursor = "crosshair";
+      });
+      map.on("mouseleave", "route-line-hit", () => {
+        map.getCanvas().style.cursor = "";
+        hoverPopup.remove();
+      });
+
+      // Tooltip temps au survol de la route
+      map.on("mousemove", "route-line-hit", (e) => {
+        const coords = routeRef.current?.coordinates;
+        if (!coords?.length) return;
+        const { lng, lat } = e.lngLat;
+        // Trouver le point le plus proche sur la route
+        let minD = Infinity, minIdx = 0;
+        coords.forEach(([cLng, cLat], i) => {
+          const d = (cLng - lng) ** 2 + (cLat - lat) ** 2;
+          if (d < minD) { minD = d; minIdx = i; }
+        });
+        const pct = Math.max(2, Math.min(98, Math.round((minIdx / (coords.length - 1)) * 100)));
+        const timeLabel = getTimeAtPctRef.current(pct);
+        hoverPopup
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background:#1E1E2E;color:#fff;
+              font-size:12px;font-weight:800;
+              padding:6px 13px;border-radius:10px;
+              white-space:nowrap;
+              font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+              box-shadow:0 3px 10px rgba(0,0,0,0.3);
+              letter-spacing:0.02em;
+            ">
+              📍 Faire étape à <strong style="color:#F09070">${timeLabel}</strong>
+            </div>
+          `)
+          .addTo(map);
+      });
+
+      // Clic sur la route → placer l'étape
+      map.on("click", "route-line-hit", (e) => {
+        const coords = routeRef.current?.coordinates;
+        if (!coords?.length) return;
+        const { lng, lat } = e.lngLat;
+        let minD = Infinity, minIdx = 0;
+        coords.forEach(([cLng, cLat], i) => {
+          const d = (cLng - lng) ** 2 + (cLat - lat) ** 2;
+          if (d < minD) { minD = d; minIdx = i; }
+        });
+        const pct = Math.max(2, Math.min(98, Math.round((minIdx / (coords.length - 1)) * 100)));
+        hoverPopup.remove();
+        onRouteClickRef.current(pct);
+        e.preventDefault();
       });
     });
 
     mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update route — fires on data change AND once the style finishes loading
+  // Update route source
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-
     function applyRoute() {
       const src = map!.getSource("route") as maplibregl.GeoJSONSource | undefined;
       if (!src) return;
@@ -96,12 +230,8 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
         geometry: { type: "LineString", coordinates: route?.coordinates ?? [] },
       });
     }
-
-    if (map.isStyleLoaded()) {
-      applyRoute();
-    } else {
-      map.once("load", applyRoute);
-    }
+    if (map.isStyleLoaded()) applyRoute();
+    else map.once("load", applyRoute);
   }, [route]);
 
   // Fit bounds
@@ -111,10 +241,16 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
     if (route && route.coordinates.length > 0) {
       const lngs = route.coordinates.map(([lng]) => lng);
       const lats = route.coordinates.map(([, lat]) => lat);
-      map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 60, duration: 600 });
+      map.fitBounds(
+        [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+        { padding: 60, duration: 600 }
+      );
     } else if (origin && destination) {
-      map.fitBounds([[Math.min(origin.lng, destination.lng), Math.min(origin.lat, destination.lat)],
-        [Math.max(origin.lng, destination.lng), Math.max(origin.lat, destination.lat)]], { padding: 60 });
+      map.fitBounds(
+        [[Math.min(origin.lng, destination.lng), Math.min(origin.lat, destination.lat)],
+         [Math.max(origin.lng, destination.lng), Math.max(origin.lat, destination.lat)]],
+        { padding: 60 }
+      );
     }
   }, [route, origin, destination]);
 
@@ -138,14 +274,40 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
     }
   }, [origin, destination]);
 
-  // ── Hotel markers — only recreated when the hotels LIST changes ──────────────
-  // selectedHotelId is intentionally NOT a dep here: we handle style updates
-  // in a separate effect so open popups are never destroyed by a selection change.
+  // ── Pin d'étape sur la carte — synchronisé avec stopPct ──────────────
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove previous markers and popups
+    if (stopPct === null || !waypoints.length) {
+      stopMarkerRef.current?.remove();
+      stopMarkerRef.current = null;
+      return;
+    }
+
+    const idx = Math.min(waypoints.length - 1, Math.floor((stopPct / 100) * waypoints.length));
+    const { lat, lng } = waypoints[idx];
+    const label = getTimeAtPct(stopPct);
+
+    if (stopMarkerRef.current) {
+      // Mise à jour position + contenu
+      stopMarkerRef.current.setLngLat([lng, lat]);
+      stopMarkerRef.current.getElement().innerHTML = createStopMarkerHTML(label, stopPinPulsing);
+    } else {
+      const el = document.createElement("div");
+      el.innerHTML = createStopMarkerHTML(label, stopPinPulsing);
+      const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat([lng, lat])
+        .addTo(map);
+      stopMarkerRef.current = marker;
+    }
+  }, [stopPct, waypoints, stopPinPulsing, getTimeAtPct]);
+
+  // ── Hotel markers ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
     markersRef.current.forEach((m) => m.remove());
     popupsRef.current.forEach((p) => p.remove());
     markersRef.current.clear();
@@ -156,34 +318,37 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
       el.innerHTML = createPriceHTML(hotel.pricePerNight, false);
 
       const popup = new maplibregl.Popup({
-        offset: [0, -8],
-        maxWidth: "300px",
-        closeOnMove: false,
-        closeButton: false,
-        closeOnClick: false,
+        offset: [0, -8], maxWidth: "300px",
+        closeOnMove: false, closeButton: false, closeOnClick: false,
       }).setHTML(`
-        <div style="width:260px;font-family:system-ui,sans-serif;padding:8px;position:relative">
-          <button
-            onclick="this.closest('.maplibregl-popup').querySelector('.maplibregl-popup-close-button')?.click();window.__kipwayClose('${hotel.id}')"
-            style="position:absolute;top:-2px;right:-2px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.95);border:none;cursor:pointer;font-size:16px;color:#1E1E2E;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.15);line-height:1;z-index:1"
-          >×</button>
-          <div style="width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#f3f4f6">
-            <img src="${hotel.imageUrl}" style="width:100%;height:100%;object-fit:cover"
+        <div class="kw-popup-card" style="width:260px;font-family:system-ui,sans-serif;position:relative;border-radius:18px;overflow:hidden;background:rgba(255,255,255,0.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);">
+          <!-- Photo -->
+          <div style="width:100%;height:148px;overflow:hidden;position:relative">
+            <img src="${hotel.imageUrl}" style="width:100%;height:100%;object-fit:cover;display:block"
               onerror="this.src='https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop'"/>
+            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0) 50%,rgba(0,0,0,0.28) 100%)"></div>
           </div>
-          <div style="font-weight:700;font-size:14px;color:#1E1E2E;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${hotel.name}</div>
-          <div style="font-size:12px;color:#6B7280;margin-bottom:12px;display:flex;gap:8px">
-            <span>${hotel.city}</span>${hotel.rating ? `<span>★ ${hotel.rating}</span>` : ""}
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:12px;color:#E8644A;font-weight:600">${hotel.detourMinutes === 0 ? "Sur la route" : `+${hotel.detourMinutes} min`}</span>
-            <button onclick="window.__kipwayExpand('${hotel.id}')" style="padding:8px 16px;border-radius:16px;background:#E8644A;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">Voir →</button>
+          <!-- Croix — visible au hover via CSS -->
+          <button
+            class="kw-close-btn"
+            onclick="window.__kipwayClose('${hotel.id}')"
+            style="position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:none;cursor:pointer;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s,background 0.15s;line-height:1;padding:0"
+          >✕</button>
+          <!-- Infos -->
+          <div style="padding:12px 14px 14px">
+            <div style="font-weight:800;font-size:14px;color:#1E1E2E;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Nunito',system-ui,sans-serif">${hotel.name}</div>
+            <div style="font-size:11px;color:#6B7280;margin-bottom:10px;display:flex;gap:6px;align-items:center">
+              ${hotel.rating ? `<span style="background:rgba(255,209,102,0.22);border:1px solid rgba(255,209,102,0.5);color:#A07000;font-weight:700;padding:1px 7px;border-radius:20px;font-size:11px">★ ${hotel.rating}</span>` : ""}
+              <span>${hotel.city}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;color:#E8644A;font-weight:700;background:rgba(232,100,74,0.10);border:1px solid rgba(232,100,74,0.22);padding:3px 9px;border-radius:20px">${hotel.detourMinutes === 0 ? "🛣 Sur la route" : `↗ +${hotel.detourMinutes} min`}</span>
+              <button onclick="window.__kipwayExpand('${hotel.id}')" style="padding:7px 16px;border-radius:20px;background:linear-gradient(135deg,#E8644A,#F09070);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(232,100,74,0.4)">Voir →</button>
+            </div>
           </div>
         </div>
       `);
 
-      // Do NOT use marker.setPopup() — we manage the popup lifecycle manually
-      // to avoid conflicts with React's render cycle.
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([hotel.lng, hotel.lat])
         .addTo(map);
@@ -192,16 +357,39 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
         e.stopPropagation();
         onSelectRef.current(hotel.id);
 
-        // Close every other open popup
+        // Ferme les autres popups d'abord
         popupsRef.current.forEach((p, pid) => {
           if (pid !== hotel.id && p.isOpen()) p.remove();
         });
 
-        // Toggle this popup directly — no togglePopup(), no isOpen() race
         if (popup.isOpen()) {
           popup.remove();
-        } else {
+          return;
+        }
+
+        // Zone centrale = 60% du viewport de la carte (marges 20% de chaque côté).
+        // Si l'hôtel est dedans → popup direct, pas de déplacement.
+        // Si l'hôtel est en bordure (20% extérieur) → flyTo fluide, popup après.
+        const { width, height } = map.getContainer().getBoundingClientRect();
+        const pt = map.project([hotel.lng, hotel.lat]);
+        const inCenter = width > 0 &&
+          pt.x > width * 0.20 && pt.x < width * 0.80 &&
+          pt.y > height * 0.20 && pt.y < height * 0.80;
+
+        if (inCenter) {
           popup.setLngLat([hotel.lng, hotel.lat]).addTo(map);
+        } else {
+          const currentZoom = map.getZoom();
+          map.flyTo({
+            center: [hotel.lng, hotel.lat],
+            zoom: currentZoom,
+            duration: 900,
+            essential: true,
+            curve: 1,
+          });
+          map.once("moveend", () => {
+            popup.setLngLat([hotel.lng, hotel.lat]).addTo(map);
+          });
         }
       });
 
@@ -209,16 +397,12 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
       popupsRef.current.set(hotel.id, popup);
     });
 
-    // Global handlers pour les boutons dans les popups
     (window as any).__kipwayExpand = (id: string) => onExpandRef.current(id);
-    (window as any).__kipwayClose  = (id: string) => {
-      popupsRef.current.get(id)?.remove();
-    };
-
+    (window as any).__kipwayClose  = (id: string) => { popupsRef.current.get(id)?.remove(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hotels]);
 
-  // ── Update marker STYLE when selection changes (no recreation) ──────────────
+  // Update marker style on selection change
   useEffect(() => {
     markersRef.current.forEach((marker, id) => {
       const el = marker.getElement();
@@ -227,13 +411,40 @@ export default function MapView({ route, hotels, origin, destination, selectedHo
     });
   }, [selectedHotelId, hotels]);
 
-  // Fly to selected hotel
+
+  // Zoom vers le point d'étape quand les hôtels arrivent
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !selectedHotelId) return;
-    const hotel = hotels.find((h) => h.id === selectedHotelId);
-    if (hotel) map.flyTo({ center: [hotel.lng, hotel.lat], zoom: 11, duration: 800 });
-  }, [selectedHotelId, hotels]);
+    if (!map || !flyToStop) return;
+    map.flyTo({
+      center: [flyToStop.lng, flyToStop.lat],
+      zoom: 10,
+      duration: 1400,
+      essential: true,
+      curve: 1.4,
+    });
+  }, [flyToStop]);
 
-  return <div ref={containerRef} style={{ height: "100%", width: "100%", background: "#e8e8e8" }} />;
+  return (
+    <>
+      <style>{`
+        @keyframes kw-pulse {
+          0%   { transform: scale(1); opacity: 0.7; }
+          100% { transform: scale(2.8); opacity: 0; }
+        }
+        .maplibregl-popup-content {
+          padding: 0 !important;
+          border-radius: 18px !important;
+          overflow: hidden !important;
+          background: transparent !important;
+          box-shadow: 0 8px 40px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.6) !important;
+          border: 1px solid rgba(255,255,255,0.55) !important;
+        }
+        .maplibregl-popup-tip { display: none !important; }
+        .kw-popup-card:hover .kw-close-btn { opacity: 1 !important; }
+        .kw-close-btn:hover { background: rgba(0,0,0,0.65) !important; }
+      `}</style>
+      <div ref={containerRef} style={{ height: "100%", width: "100%", background: "#e8e8e8" }} />
+    </>
+  );
 }
