@@ -117,7 +117,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
           />
 
-          {/* Zones de navigation — 1/3 gauche et 1/3 droit, grande zone cliquable */}
+          {/* Zones de navigation — 38% gauche et 38% droit, grande zone cliquable */}
           {(["left", "right"] as const).map((side) => {
             const isLeft = side === "left";
             const isHov = hoveredArrow === side;
@@ -188,8 +188,8 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
             </div>
           )}
 
-          {/* Top-right buttons: close + share */}
-          <div style={{ position: "absolute", top: "14px", right: "14px", display: "flex", gap: "8px" }}>
+          {/* Top-right buttons: close + share — z-index 5 pour passer au-dessus des zones nav */}
+          <div style={{ position: "absolute", top: "14px", right: "14px", display: "flex", gap: "8px", zIndex: 5 }}>
             <button
               onClick={handleShare}
               style={{
