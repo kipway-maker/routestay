@@ -117,46 +117,55 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
             onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
           />
 
-          {/* Flèche gauche */}
-          {photoHover && (
-            <button
-              onMouseEnter={() => setHoveredArrow("left")}
-              onMouseLeave={() => setHoveredArrow(null)}
-              onClick={() => setPhotoIdx((i) => Math.max(0, i - 1))}
-              style={{
-                position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)",
-                width: "36px", height: "36px", borderRadius: "50%", border: "none", outline: "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: photoIdx > 0 ? "pointer" : "default",
-                background: hoveredArrow === "left" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.22)",
-                boxShadow: hoveredArrow === "left" ? "0 0 0 10px rgba(255,255,255,0.18), 0 2px 12px rgba(0,0,0,0.15)" : "none",
-                opacity: hoveredArrow === "left" ? 1 : 0.4,
-                transition: "background 0.12s, box-shadow 0.12s, opacity 0.12s",
-                fontSize: "18px", fontWeight: 700,
-                color: hoveredArrow === "left" ? "#1E1E2E" : "#fff",
-              }}
-            >‹</button>
-          )}
-          {/* Flèche droite */}
-          {photoHover && (
-            <button
-              onMouseEnter={() => setHoveredArrow("right")}
-              onMouseLeave={() => setHoveredArrow(null)}
-              onClick={() => setPhotoIdx((i) => Math.min(photos.length - 1, i + 1))}
-              style={{
-                position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)",
-                width: "36px", height: "36px", borderRadius: "50%", border: "none", outline: "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: photoIdx < photos.length - 1 ? "pointer" : "default",
-                background: hoveredArrow === "right" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.22)",
-                boxShadow: hoveredArrow === "right" ? "0 0 0 10px rgba(255,255,255,0.18), 0 2px 12px rgba(0,0,0,0.15)" : "none",
-                opacity: hoveredArrow === "right" ? 1 : 0.4,
-                transition: "background 0.12s, box-shadow 0.12s, opacity 0.12s",
-                fontSize: "18px", fontWeight: 700,
-                color: hoveredArrow === "right" ? "#1E1E2E" : "#fff",
-              }}
-            >›</button>
-          )}
+          {/* Zones de navigation — 1/3 gauche et 1/3 droit, grande zone cliquable */}
+          {(["left", "right"] as const).map((side) => {
+            const isLeft = side === "left";
+            const isHov = hoveredArrow === side;
+            const canNav = isLeft ? photoIdx > 0 : photoIdx < photos.length - 1;
+            return (
+              <div
+                key={side}
+                onMouseEnter={() => setHoveredArrow(side)}
+                onMouseLeave={() => setHoveredArrow(null)}
+                onClick={() => canNav && (isLeft
+                  ? setPhotoIdx((i) => i - 1)
+                  : setPhotoIdx((i) => i + 1))}
+                style={{
+                  position: "absolute",
+                  top: 0, bottom: 0,
+                  left: isLeft ? 0 : undefined,
+                  right: isLeft ? undefined : 0,
+                  width: "38%",
+                  cursor: canNav ? "pointer" : "default",
+                  display: "flex", alignItems: "center",
+                  justifyContent: isLeft ? "flex-start" : "flex-end",
+                  paddingLeft: isLeft ? "14px" : 0,
+                  paddingRight: isLeft ? 0 : "14px",
+                  background: isHov && canNav
+                    ? isLeft
+                      ? "linear-gradient(to right, rgba(0,0,0,0.22), transparent)"
+                      : "linear-gradient(to left, rgba(0,0,0,0.22), transparent)"
+                    : "transparent",
+                  transition: "background 0.18s",
+                  zIndex: 2,
+                }}
+              >
+                <span style={{
+                  fontSize: "32px",
+                  fontWeight: 300,
+                  color: "#fff",
+                  opacity: isHov && canNav ? 1 : 0,
+                  transform: isHov ? "scale(1)" : "scale(0.8)",
+                  transition: "opacity 0.18s, transform 0.18s",
+                  lineHeight: 1,
+                  textShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                  userSelect: "none",
+                }}>
+                  {isLeft ? "‹" : "›"}
+                </span>
+              </div>
+            );
+          })}
 
           {/* Dots */}
           {photos.length > 1 && (
