@@ -219,7 +219,7 @@ function generateMockHotels(points: Array<{ lat: number; lng: number }>): Hotel[
         images: (() => {
           const type = ACCOM_TYPES[(i * 3 + j) % ACCOM_TYPES.length];
           const imgs = MOCK_IMAGES_BY_TYPE[type];
-          return [0, 1, 2].map((k) => imgs[(i * 3 + j + k) % imgs.length]);
+          return Array.from({ length: Math.min(10, imgs.length) }, (_, k) => imgs[(i * 3 + j + k) % imgs.length]);
         })(),
         checkinDeadline: CHECKIN_DEADLINES[(i * 3 + j) % CHECKIN_DEADLINES.length],
         hasEVCharger: (i * 3 + j) % 3 === 0,

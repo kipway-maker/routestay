@@ -50,7 +50,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
   const [photoIdx, setPhotoIdx] = useState(0);
   const [photoHover, setPhotoHover] = useState(false);
 
-  const images: string[] = hotel.images?.length ? hotel.images : [hotel.imageUrl];
+  const images: string[] = (hotel.images?.length ? hotel.images : [hotel.imageUrl]).slice(0, 5);
   const photoCount = images.length;
 
   const isLate  = !!(estimatedArrival && hotel.checkinDeadline && timeToMin(estimatedArrival) > timeToMin(hotel.checkinDeadline));
@@ -171,7 +171,7 @@ export default function HotelCard({ hotel, selected, onSelect, estimatedArrival 
           )}
           {!hotel.checkinDeadline && (
             <GlassPill color="rgba(30,30,46,0.45)" border="rgba(255,255,255,0.3)" textColor="#fff">
-              🌙 24h
+              ✦ 24h
             </GlassPill>
           )}
         </div>

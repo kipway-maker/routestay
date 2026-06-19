@@ -8,8 +8,12 @@ import { Hotel } from "@/lib/amadeus";
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY ?? "";
 const MAP_STYLE = `https://api.maptiler.com/maps/019e69f3-cd46-753f-a7c4-d5924682d95e/style.json?key=${MAPTILER_KEY}`;
 
-function createPriceHTML(price: number | null, selected: boolean) {
-  const bg = selected ? "#E8644A" : "#1E1E2E";
+function createPriceHTML(price: number | null, selected: boolean, hovered = false) {
+  const bg = selected || hovered ? "#E8644A" : "#1E1E2E";
+  const scale = selected ? "scale(1.18)" : hovered ? "scale(1.22)" : "scale(1)";
+  const shadow = hovered || selected
+    ? "0 4px 16px rgba(232,100,74,0.45)"
+    : "0 2px 8px rgba(0,0,0,0.25)";
   const label = price ? `${price} €` : "?";
   return `<div style="
     background: ${bg};
@@ -19,12 +23,12 @@ function createPriceHTML(price: number | null, selected: boolean) {
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    box-shadow: ${shadow};
     border: 2px solid #fff;
-    transform: ${selected ? "scale(1.15)" : "scale(1)"};
+    transform: ${scale};
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     cursor: pointer;
-    transition: transform 0.15s, background 0.15s;
+    transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
   ">${label}</div>`;
 }
 
@@ -68,6 +72,7 @@ interface MapViewProps {
   origin: { name: string; lat: number; lng: number } | null;
   destination: { name: string; lat: number; lng: number } | null;
   selectedHotelId: string | null;
+  hoveredHotelId?: string | null;
   onSelectHotel: (id: string) => void;
   onExpandHotel: (id: string) => void;
   // Point d'étape — synchronisation map ↔ timeline
@@ -80,7 +85,7 @@ interface MapViewProps {
 }
 
 export default function MapView({
-  route, hotels, origin, destination, selectedHotelId,
+  route, hotels, origin, destination, selectedHotelId, hoveredHotelId,
   onSelectHotel, onExpandHotel,
   stopPct, waypoints, onRouteClick, getTimeAtPct, stopPinPulsing = false,
   flyToStop,
@@ -165,18 +170,29 @@ export default function MapView({
         hoverPopup.remove();
       });
 
+      // pct par distance cumulée (pas par index) — les coords ne sont pas équidistantes
+      function coordPct(coords: [number, number][], clickLng: number, clickLat: number): number {
+        let minD = Infinity, minIdx = 0;
+        coords.forEach(([cLng, cLat], i) => {
+          const d = (cLng - clickLng) ** 2 + (cLat - clickLat) ** 2;
+          if (d < minD) { minD = d; minIdx = i; }
+        });
+        let totalDist = 0, distToMin = 0;
+        for (let i = 1; i < coords.length; i++) {
+          const dx = coords[i][0] - coords[i - 1][0];
+          const dy = coords[i][1] - coords[i - 1][1];
+          const seg = Math.sqrt(dx * dx + dy * dy);
+          if (i <= minIdx) distToMin += seg;
+          totalDist += seg;
+        }
+        return Math.max(2, Math.min(98, Math.round((distToMin / (totalDist || 1)) * 100)));
+      }
+
       // Tooltip temps au survol de la route
       map.on("mousemove", "route-line-hit", (e) => {
         const coords = routeRef.current?.coordinates;
         if (!coords?.length) return;
-        const { lng, lat } = e.lngLat;
-        // Trouver le point le plus proche sur la route
-        let minD = Infinity, minIdx = 0;
-        coords.forEach(([cLng, cLat], i) => {
-          const d = (cLng - lng) ** 2 + (cLat - lat) ** 2;
-          if (d < minD) { minD = d; minIdx = i; }
-        });
-        const pct = Math.max(2, Math.min(98, Math.round((minIdx / (coords.length - 1)) * 100)));
+        const pct = coordPct(coords, e.lngLat.lng, e.lngLat.lat);
         const timeLabel = getTimeAtPctRef.current(pct);
         hoverPopup
           .setLngLat(e.lngLat)
@@ -190,7 +206,7 @@ export default function MapView({
               box-shadow:0 3px 10px rgba(0,0,0,0.3);
               letter-spacing:0.02em;
             ">
-              📍 Faire étape à <strong style="color:#F09070">${timeLabel}</strong>
+              🛏 Faire étape à <strong style="color:#F09070">${timeLabel}</strong>
             </div>
           `)
           .addTo(map);
@@ -200,13 +216,7 @@ export default function MapView({
       map.on("click", "route-line-hit", (e) => {
         const coords = routeRef.current?.coordinates;
         if (!coords?.length) return;
-        const { lng, lat } = e.lngLat;
-        let minD = Infinity, minIdx = 0;
-        coords.forEach(([cLng, cLat], i) => {
-          const d = (cLng - lng) ** 2 + (cLat - lat) ** 2;
-          if (d < minD) { minD = d; minIdx = i; }
-        });
-        const pct = Math.max(2, Math.min(98, Math.round((minIdx / (coords.length - 1)) * 100)));
+        const pct = coordPct(coords, e.lngLat.lng, e.lngLat.lat);
         hoverPopup.remove();
         onRouteClickRef.current(pct);
         e.preventDefault();
@@ -279,14 +289,38 @@ export default function MapView({
     const map = mapRef.current;
     if (!map) return;
 
-    if (stopPct === null || !waypoints.length) {
+    if (stopPct === null) {
       stopMarkerRef.current?.remove();
       stopMarkerRef.current = null;
       return;
     }
 
-    const idx = Math.min(waypoints.length - 1, Math.floor((stopPct / 100) * waypoints.length));
-    const { lat, lng } = waypoints[idx];
+    // Positionner sur la polyline exacte (distance cumulée) — pas sur les waypoints grossiers
+    const coords = routeRef.current?.coordinates;
+    let lat: number, lng: number;
+    if (coords?.length) {
+      let totalDist = 0;
+      const segs: number[] = [0];
+      for (let i = 1; i < coords.length; i++) {
+        const dx = coords[i][0] - coords[i - 1][0];
+        const dy = coords[i][1] - coords[i - 1][1];
+        totalDist += Math.sqrt(dx * dx + dy * dy);
+        segs.push(totalDist);
+      }
+      const target = (stopPct / 100) * totalDist;
+      let i = segs.findIndex((d) => d >= target);
+      if (i <= 0) i = 1;
+      const segLen = segs[i] - segs[i - 1];
+      const t = segLen > 0 ? (target - segs[i - 1]) / segLen : 0;
+      lng = coords[i - 1][0] + t * (coords[i][0] - coords[i - 1][0]);
+      lat = coords[i - 1][1] + t * (coords[i][1] - coords[i - 1][1]);
+    } else if (waypoints.length) {
+      const idx = Math.min(waypoints.length - 1, Math.floor((stopPct / 100) * waypoints.length));
+      lat = waypoints[idx].lat;
+      lng = waypoints[idx].lng;
+    } else {
+      return;
+    }
     const label = getTimeAtPct(stopPct);
 
     if (stopMarkerRef.current) {
@@ -376,9 +410,8 @@ export default function MapView({
           pt.x > width * 0.20 && pt.x < width * 0.80 &&
           pt.y > height * 0.20 && pt.y < height * 0.80;
 
-        if (inCenter) {
-          popup.setLngLat([hotel.lng, hotel.lat]).addTo(map);
-        } else {
+        popup.setLngLat([hotel.lng, hotel.lat]).addTo(map);
+        if (!inCenter) {
           const currentZoom = map.getZoom();
           map.flyTo({
             center: [hotel.lng, hotel.lat],
@@ -386,9 +419,6 @@ export default function MapView({
             duration: 900,
             essential: true,
             curve: 1,
-          });
-          map.once("moveend", () => {
-            popup.setLngLat([hotel.lng, hotel.lat]).addTo(map);
           });
         }
       });
@@ -398,18 +428,21 @@ export default function MapView({
     });
 
     (window as any).__kipwayExpand = (id: string) => onExpandRef.current(id);
-    (window as any).__kipwayClose  = (id: string) => { popupsRef.current.get(id)?.remove(); };
+    (window as any).__kipwayClose  = (id: string) => { popupsRef.current.get(id)?.remove(); onSelectRef.current(id); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hotels]);
 
-  // Update marker style on selection change
+  // Update marker style on selection / hover change
   useEffect(() => {
     markersRef.current.forEach((marker, id) => {
       const el = marker.getElement();
       const hotel = hotels.find((h) => h.id === id);
-      if (hotel) el.innerHTML = createPriceHTML(hotel.pricePerNight, id === selectedHotelId);
+      const isSelected = id === selectedHotelId;
+      const isHovered = id === hoveredHotelId;
+      if (hotel) el.innerHTML = createPriceHTML(hotel.pricePerNight, isSelected, isHovered);
+      el.style.zIndex = isHovered ? "10" : isSelected ? "5" : "";
     });
-  }, [selectedHotelId, hotels]);
+  }, [selectedHotelId, hoveredHotelId, hotels]);
 
 
   // Zoom vers le point d'étape quand les hôtels arrivent

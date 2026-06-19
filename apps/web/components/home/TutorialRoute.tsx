@@ -922,9 +922,6 @@ export default function TutorialRoute({ hideHeader=false, hideStepCards=false }:
           {/* Décapotable jaune — milieu du rond (côté droit, x≈290, y≈840) */}
           <Convertible x={108} y={840} rotation={270}/>
 
-          {/* Palace — à gauche de l'étape 4, avec respiration */}
-          <GrandHotel x={460} y={1340}/>
-
           {/* Voiture bleue — entre étape 3 et 4 */}
           <Car x={420} y={1148} rotation={10} flipX={true} bodyColor="#6FA8C0" roofColor="#5A90A8" bumperColor="#4A7890"/>
 

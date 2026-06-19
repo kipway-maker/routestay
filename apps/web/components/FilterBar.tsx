@@ -76,7 +76,7 @@ export default function FilterBar({ filters, onChange, totalCount, filteredCount
   const sliderVal = filters.maxDetourMin ?? MAX_DETOUR_MIN;
   const isMaxed = sliderVal >= MAX_DETOUR_MIN;
   const hasActive = filters.maxPrice !== null || !isMaxed || filters.minRating !== null
-    || filters.sortBy !== "default" || filters.evOnly
+    || filters.sortBy !== "default"
     || filters.sources.length < ALL_SOURCES.length;
 
   function toggleSource(src: HotelSource) {
@@ -147,24 +147,6 @@ export default function FilterBar({ filters, onChange, totalCount, filteredCount
           active={filters.minRating}
           onChange={(v) => onChange({ ...filters, minRating: v as number | null })}
         />
-
-        <div style={{ width: "1px", height: "28px", background: "#e5e7eb", flexShrink: 0 }} />
-
-        {/* EV */}
-        <button
-          onClick={() => onChange({ ...filters, evOnly: !filters.evOnly })}
-          style={{
-            padding: "5px 12px", borderRadius: "20px", flexShrink: 0,
-            border: filters.evOnly ? "1.5px solid #06D6A0" : "1.5px solid #e5e7eb",
-            background: filters.evOnly ? "#06D6A0" : "#FFFFFF",
-            color: filters.evOnly ? "#FFFFFF" : "#1A1A2E",
-            fontSize: "12px", fontWeight: 600, cursor: "pointer",
-            display: "flex", alignItems: "center", gap: "5px",
-            transition: "all 0.15s",
-          }}
-        >
-          ⚡ Borne EV
-        </button>
 
         <div style={{ width: "1px", height: "28px", background: "#e5e7eb", flexShrink: 0 }} />
 

@@ -42,22 +42,46 @@ const PHOTOS: Record<Hotel["accommodationType"], string[]> = {
     "https://images.unsplash.com/photo-1551882547-ff40c599fb2e?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1564501049412-61c2a01f61d4?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1496417263034-38ec4f0b665a?w=600&h=400&fit=crop",
   ],
   bb: [
     "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1595877244574-e90ce41ce089?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1536437075651-01d675529a6b?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1469022563428-aa54fde49c92?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&h=400&fit=crop",
   ],
   auberge: [
     "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1521401830884-6c03c1c87ebb?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1529408686214-b48b8532f72c?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1601701119533-fde08f62a0c6?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1596436889106-be35e843f974?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1565073624497-7144969e0a98?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1587381420270-3e1a5b9e6904?w=600&h=400&fit=crop",
   ],
   camping: [
     "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1537225228614-56cc3556d7ed?w=600&h=400&fit=crop",
     "https://images.unsplash.com/photo-1487730116645-74489c95b41b?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1496545672447-f699b503d270?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1533575770077-052fa2c609fc?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1525811902-f2342640856e?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1544980919-e17526d4ed0a?w=600&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1563299796-17596ed6b017?w=600&h=400&fit=crop",
   ],
 };
 
@@ -154,7 +178,7 @@ out center tags;`;
       tags["opening_hours"] === "24/7" ||
       /24|always/i.test(tags["opening_hours"] ?? "");
 
-    const checkinDeadline = parseCheckin(tags.check_in, is24h) ?? mockCheckin(el.id);
+    const checkinDeadline = parseCheckin(tags.check_in, is24h); // null = pas d'info OSM
 
     const hasEVCharger =
       tags["motorcar:charging"] === "yes" ||
@@ -165,7 +189,7 @@ out center tags;`;
     const starsRaw = tags.stars ? parseFloat(tags.stars) : null;
     const rating = starsRaw != null && starsRaw > 0
       ? Math.min(5, Math.round(starsRaw * 10 + 10) / 10) // 3 étoiles → ~4.0
-      : mockRating(el.id);
+      : null; // pas de note OSM disponible
 
     const city =
       tags["addr:city"] ??
@@ -180,12 +204,12 @@ out center tags;`;
       "6 avenue de la Gare", "33 rue Nationale", "2 place Bellecour", "18 rue du Commerce",
     ];
     const addressFromOsm = [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean).join(" ");
-    const address = addressFromOsm || MOCK_STREETS[el.id % MOCK_STREETS.length];
+    const address = addressFromOsm || undefined; // pas d'adresse OSM → on n'invente pas
 
     // ── Photos ────────────────────────────────────────────────────
     const imgs = PHOTOS[accommodationType];
     const imgBase = el.id % imgs.length;
-    const images = [0, 1, 2].map((k) => imgs[(imgBase + k) % imgs.length]);
+    const images = Array.from({ length: Math.min(10, imgs.length) }, (_, k) => imgs[(imgBase + k) % imgs.length]);
 
     hotels.push({
       id:                 `osm-${el.id}`,
@@ -197,7 +221,7 @@ out center tags;`;
       detourMinutes,
       routePositionPct,
       city,
-      pricePerNight:      mockPrice(el.id),
+      pricePerNight:      null, // prix non disponible via OSM
       currency:           "EUR",
       rating,
       imageUrl:           images[0],

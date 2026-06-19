@@ -89,8 +89,7 @@ export default function FilterModal({
     filters.maxPrice !== null ||
     filters.maxDetourMin !== null ||
     filters.minRating !== null ||
-    filters.sortBy !== "default" ||
-    filters.evOnly;
+    filters.sortBy !== "default";
 
   if (!isOpen) return null;
 
@@ -153,19 +152,6 @@ export default function FilterModal({
         {/* Scrollable body */}
         <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
 
-          {/* Recommandations */}
-          <SectionTitle>Nos recommandations</SectionTitle>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <RecoTile
-              emoji="⚡"
-              label="Borne EV"
-              active={filters.evOnly}
-              onClick={() => onChange({ ...filters, evOnly: !filters.evOnly })}
-            />
-          </div>
-
-          <Divider />
-
           {/* Détour */}
           <SectionTitle>Détour</SectionTitle>
           <label style={{
@@ -202,42 +188,34 @@ export default function FilterModal({
           <Divider />
 
           {/* Prix */}
-          <SectionTitle>Fourchette de prix</SectionTitle>
-
-          {/* Histogram */}
-          {histogram.counts.some((c) => c > 0) && (
-            <div style={{ display: "flex", alignItems: "flex-end", gap: "3px", height: "64px", marginBottom: "16px" }}>
-              {histogram.counts.map((count, i) => {
-                const barPrice = histogram.min + (i / histogram.counts.length) * (histogram.max - histogram.min);
-                const inRange = filters.maxPrice === null || barPrice <= filters.maxPrice;
-                return (
-                  <div key={i} style={{
-                    flex: 1,
-                    height: `${Math.max(0, (count / maxBinCount) * 100)}%`,
-                    background: inRange ? "#FF6240" : "#e5e7eb",
-                    borderRadius: "2px 2px 0 0",
-                    minHeight: count > 0 ? "4px" : "0",
-                    transition: "background 0.2s",
-                  }} />
-                );
-              })}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <SectionTitle>Budget par nuit</SectionTitle>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             {([
-              { label: "Tous les prix", value: null },
-              { label: "< 60 €", value: 60 },
-              { label: "< 100 €", value: 100 },
-              { label: "< 150 €", value: 150 },
-            ] as { label: string; value: number | null }[]).map((opt) => (
-              <PillBtn
-                key={String(opt.value)}
-                label={opt.label}
-                active={filters.maxPrice === opt.value}
-                onClick={() => onChange({ ...filters, maxPrice: opt.value })}
-              />
-            ))}
+              { label: "Tous les budgets", sub: "Aucune limite", value: null, emoji: "✦" },
+              { label: "Économique", sub: "Moins de 80 €", value: 80, emoji: "💰" },
+              { label: "Milieu de gamme", sub: "Moins de 130 €", value: 130, emoji: "🏨" },
+              { label: "Confort+", sub: "Moins de 200 €", value: 200, emoji: "⭐" },
+            ] as { label: string; sub: string; value: number | null; emoji: string }[]).map((opt) => {
+              const active = filters.maxPrice === opt.value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  onClick={() => onChange({ ...filters, maxPrice: opt.value })}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "flex-start",
+                    gap: "3px", padding: "12px 14px",
+                    borderRadius: "14px",
+                    border: active ? "2px solid #1A1A2E" : "1.5px solid #e5e7eb",
+                    background: active ? "#1A1A2E" : "#fff",
+                    cursor: "pointer", transition: "all 0.15s", textAlign: "left",
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>{opt.emoji}</span>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: active ? "#fff" : "#1A1A2E" }}>{opt.label}</span>
+                  <span style={{ fontSize: "11px", color: active ? "rgba(255,255,255,0.6)" : "#9CA3AF" }}>{opt.sub}</span>
+                </button>
+              );
+            })}
           </div>
 
           <Divider />

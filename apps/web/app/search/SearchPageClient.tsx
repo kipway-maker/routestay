@@ -181,8 +181,7 @@ function activeFilterCount(f: Filters): number {
   if (f.maxDetourMin !== null) n++;
   if (f.minRating !== null) n++;
   if (f.sortBy !== "default") n++;
-  if (f.evOnly) n++;
-  if (f.routePosition !== "all") n++;
+if (f.routePosition !== "all") n++;
   return n;
 }
 
@@ -226,6 +225,7 @@ export default function SearchPageClient() {
   const [loading, setLoading] = useState(false);       // chargement itinéraire
   const [hotelLoading, setHotelLoading] = useState(false); // chargement hôtels
   const [selectedHotel, setSelectedHotel] = useState<string | null>(null);
+  const [hoveredHotel, setHoveredHotel] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [departureTime, setDepartureTime] = useState<string>(getNowHHMM());
   const [departureDate, setDepartureDate] = useState<string>(() => {
@@ -307,9 +307,7 @@ export default function SearchPageClient() {
       list = list.filter((h) => h.detourMinutes <= filters.maxDetourMin!);
     if (filters.minRating !== null)
       list = list.filter((h) => h.rating !== null && h.rating >= filters.minRating!);
-    if (filters.evOnly)
-      list = list.filter((h) => h.hasEVCharger);
-    if (filterReception24h)
+if (filterReception24h)
       list = list.filter((h) => h.checkinDeadline === null);
     if (filters.accommodationType !== null)
       list = list.filter((h) => h.accommodationType === filters.accommodationType);
@@ -387,11 +385,6 @@ export default function SearchPageClient() {
       setWaypoints(wpts);
       setLoading(false);
       setHasInteracted(false);
-      // Point d'étape par défaut : milieu du trajet — pulse pour attirer l'attention
-      setStopPct(50);
-      setStopPinPulsing(true);
-      setTimeout(() => setStopPinPulsing(false), 4000);
-      await fetchHotelsAt(50, wpts);
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -465,7 +458,7 @@ export default function SearchPageClient() {
 
           <Link href="/" style={{ textDecoration: "none", flexShrink: 0, position: "relative", zIndex: 3 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-kipway-v3.png" alt="KipWay" style={{ height: "64px", width: "auto" }} />
+            <img src="/logo-kipway-v3.png" alt="KipWay" style={{ height: "88px", width: "auto" }} />
           </Link>
 
           {/* z-index: 2 → l'input est AU-DESSUS du ruban mais le ruban passe derrière */}
@@ -473,41 +466,6 @@ export default function SearchPageClient() {
             <SearchBar onSearch={handleSearch} loading={loading} compact />
           </div>
 
-          {/* Bouton Filtres */}
-          {!loading && hotels.length > 0 && (
-            <button
-              onClick={() => setFilterModalOpen(true)}
-              style={{
-                flexShrink: 0, position: "relative", zIndex: 2,
-                display: "flex", alignItems: "center", gap: "6px",
-                padding: "7px 14px", borderRadius: "20px",
-                border: activeFilters > 0 ? "1.5px solid #E8644A" : "1.5px solid #e5e7eb",
-                background: activeFilters > 0 ? "#E8644A" : "#FFFFFF",
-                color: activeFilters > 0 ? "#FFFFFF" : "#1E1E2E",
-                fontSize: "13px", fontWeight: 600, cursor: "pointer",
-                transition: "all 0.15s",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="8" y1="12" x2="20" y2="12" />
-                <line x1="12" y1="18" x2="20" y2="18" />
-                <circle cx="4" cy="12" r="2" fill="currentColor" stroke="none" />
-                <circle cx="8" cy="18" r="2" fill="currentColor" stroke="none" />
-              </svg>
-              Filtres
-              {activeFilters > 0 && (
-                <span style={{
-                  background: "#E8644A", color: "#fff",
-                  borderRadius: "50%", width: "18px", height: "18px",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "10px", fontWeight: 700,
-                }}>
-                  {activeFilters}
-                </span>
-              )}
-            </button>
-          )}
         </div>
 
         {/* ── BANDE ROUTE + FILTRES RAPIDES ── */}
@@ -537,15 +495,21 @@ export default function SearchPageClient() {
               </div>
 
               {/* Hint — toujours visible, guide l'utilisateur */}
-              <span style={{
-                fontSize: "12px", fontStyle: "italic",
-                color: hasInteracted ? "#C0C8D4" : "#6FA8C0",
-                fontWeight: hasInteracted ? 400 : 600,
-                transition: "color 0.4s, font-weight 0.4s",
-                flexShrink: 1, textAlign: "right", lineHeight: 1.3,
-              }}>
-                {hasInteracted ? "Bougez le curseur ou recliquez" : "👆 Glissez la ligne ou cliquez sur la carte"}
-              </span>
+              {!hasInteracted && (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  fontSize: "13px", fontWeight: 700,
+                  color: "#E8644A",
+                  background: "rgba(232,100,74,0.08)",
+                  border: "1px solid rgba(232,100,74,0.20)",
+                  borderRadius: "20px",
+                  padding: "5px 12px",
+                  flexShrink: 1, lineHeight: 1.3,
+                  animation: "pulse-hint 2s ease-in-out infinite",
+                }}>
+                  ↔ Déplacez le point sur la route pour choisir votre étape
+                </span>
+              )}
 
             </div>
 
@@ -761,114 +725,117 @@ export default function SearchPageClient() {
 
             </div>
 
-            {/* Toggle check-in */}
-            <div
-              onClick={() => setUseArrivalCheck((v) => !v)}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: "10px",
-                marginBottom: "10px", cursor: "pointer",
-                background: "rgba(255,255,255,0.55)",
-                backdropFilter: "blur(16px)",
-                WebkitBackdropFilter: "blur(16px)",
-                border: "1px solid rgba(255,255,255,0.6)",
-                borderRadius: "50px",
-                padding: "6px 14px 6px 8px",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
-              }}
-            >
-              {/* Toggle pill */}
-              <div style={{
-                width: "42px", height: "24px", borderRadius: "12px",
-                background: useArrivalCheck ? "#E8644A" : "#d1d5db",
-                position: "relative", flexShrink: 0,
-                transition: "background 0.2s",
-              }}>
-                <div style={{
-                  position: "absolute", top: "3px",
-                  left: useArrivalCheck ? "21px" : "3px",
-                  width: "18px", height: "18px", borderRadius: "50%",
-                  background: "#fff",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
-                  transition: "left 0.2s",
-                }} />
-              </div>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "#1E1E2E", userSelect: "none" }}>
-                Prendre en compte l'heure des check-in
-              </span>
-            </div>
-
-            {/* Filtres rapides */}
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {/* Filtres rapides — 3 pills + bouton Filtres */}
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
               {([
                 {
+                  key: "checkin",
+                  emoji: "⏰",
+                  label: "Check-in",
+                  sublabel: "Vérifie les horaires",
+                  active: useArrivalCheck,
+                  toggle: () => setUseArrivalCheck((v) => !v),
+                },
+                {
                   key: "nodetour",
-                  icon: (
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                    </svg>
-                  ),
-                  label: "Sans détour", active: filters.maxDetourMin === 5,
-                  disabled: false,
-                  tooltip: null,
+                  emoji: "🛣",
+                  label: "Sur la route",
+                  sublabel: "Aucun détour",
+                  active: filters.maxDetourMin === 5,
                   toggle: () => setFilters((f) => ({ ...f, maxDetourMin: f.maxDetourMin === 5 ? null : 5 })),
                 },
                 {
-                  key: "ev",
-                  icon: (
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                    </svg>
-                  ),
-                  label: "Borne EV",
-                  active: false,
-                  disabled: true,
-                  tooltip: "Non disponible via Booking / TripAdvisor",
-                  toggle: () => {},
-                },
-                {
                   key: "24h",
-                  icon: (
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                    </svg>
-                  ),
+                  emoji: "🌙",
                   label: "Accueil 24h",
-                  active: false,
-                  disabled: true,
-                  tooltip: "Non disponible via Booking / TripAdvisor",
-                  toggle: () => {},
+                  sublabel: "Kiosque / réception",
+                  active: filterReception24h,
+                  toggle: () => setFilterReception24h((v) => !v),
                 },
-              ] as { key: string; icon: React.ReactNode; label: string; active: boolean; disabled: boolean; tooltip: string | null; toggle: () => void }[]).map((item) => (
+              ]).map((item) => (
                 <button
                   key={item.key}
-                  onClick={item.disabled ? undefined : item.toggle}
-                  title={item.tooltip ?? undefined}
+                  onClick={item.toggle}
                   style={{
-                    display: "inline-flex", alignItems: "center", gap: "5px",
-                    padding: "5px 12px", borderRadius: "20px",
-                    border: item.active ? "1px solid #E8644A" : "1px solid rgba(0,0,0,0.10)",
-                    background: item.disabled ? "rgba(0,0,0,0.03)" : item.active ? "#E8644A" : "rgba(255,255,255,0.70)",
+                    display: "inline-flex", flexDirection: "column", alignItems: "flex-start",
+                    gap: "2px",
+                    padding: "10px 20px 10px 16px", borderRadius: "20px",
+                    border: item.active ? "1.5px solid #E8644A" : "1.5px solid rgba(0,0,0,0.10)",
+                    background: item.active
+                      ? "linear-gradient(135deg, #E8644A 0%, #F09070 100%)"
+                      : "rgba(255,255,255,0.80)",
                     backdropFilter: "blur(12px)",
                     WebkitBackdropFilter: "blur(12px)",
-                    color: item.disabled ? "#d1d5db" : item.active ? "#FFFFFF" : "#4B5563",
-                    fontSize: "12px", fontWeight: 500,
-                    cursor: item.disabled ? "not-allowed" : "pointer",
-                    transition: "all 0.15s", whiteSpace: "nowrap",
-                    boxShadow: item.active ? "0 2px 8px rgba(232,100,74,0.25)" : "0 1px 3px rgba(0,0,0,0.06)",
-                    letterSpacing: "0.01em",
-                    opacity: item.disabled ? 0.5 : 1,
+                    color: item.active ? "#FFFFFF" : "#374151",
+                    cursor: "pointer",
+                    transition: "all 0.18s",
+                    whiteSpace: "nowrap",
+                    boxShadow: item.active
+                      ? "0 4px 12px rgba(232,100,74,0.30)"
+                      : "0 1px 4px rgba(0,0,0,0.07)",
+                    textAlign: "left",
                   }}
                 >
-                  {item.icon}
-                  {item.label}
-                  {item.disabled && <span style={{ fontSize: "9px", opacity: 0.7 }}>N/A</span>}
+                  <span style={{ fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "5px" }}>
+                    <span style={{ fontSize: "11px" }}>{item.emoji}</span>
+                    {item.label}
+                  </span>
+                  <span style={{
+                    fontSize: "10px", fontWeight: 500,
+                    color: item.active ? "rgba(255,255,255,0.80)" : "#9ca3af",
+                    lineHeight: 1,
+                  }}>
+                    {item.sublabel}
+                  </span>
                 </button>
               ))}
+
+              {/* Séparateur vertical */}
+              <div style={{ width: "1px", height: "36px", background: "rgba(0,0,0,0.10)", flexShrink: 0 }} />
+
+              {/* Bouton Filtres avancés */}
+              {hotels.length > 0 && (
+                <button
+                  onClick={() => setFilterModalOpen(true)}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "6px",
+                    padding: "10px 18px", borderRadius: "20px",
+                    border: activeFilters > 0 ? "1.5px solid #E8644A" : "1.5px solid rgba(0,0,0,0.10)",
+                    background: activeFilters > 0 ? "#E8644A" : "rgba(255,255,255,0.80)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    color: activeFilters > 0 ? "#FFFFFF" : "#374151",
+                    fontSize: "13px", fontWeight: 700, cursor: "pointer",
+                    transition: "all 0.18s",
+                    whiteSpace: "nowrap",
+                    boxShadow: activeFilters > 0 ? "0 4px 12px rgba(232,100,74,0.30)" : "0 1px 4px rgba(0,0,0,0.07)",
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="4" y1="6" x2="20" y2="6" />
+                    <line x1="8" y1="12" x2="20" y2="12" />
+                    <line x1="12" y1="18" x2="20" y2="18" />
+                    <circle cx="4" cy="12" r="2" fill="currentColor" stroke="none" />
+                    <circle cx="8" cy="18" r="2" fill="currentColor" stroke="none" />
+                  </svg>
+                  Filtres
+                  {activeFilters > 0 && (
+                    <span style={{
+                      background: "rgba(255,255,255,0.30)", color: "#fff",
+                      borderRadius: "50%", width: "18px", height: "18px",
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "10px", fontWeight: 700,
+                    }}>
+                      {activeFilters}
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* Focus Point */}
+        {/* Focus Point — désactivé temporairement
         {!loading && hotels.length > 0 && (
           <FocusPointBand
             hotels={hotels}
@@ -876,10 +843,11 @@ export default function SearchPageClient() {
             onSelectHotel={toggleHotel}
           />
         )}
+        */}
 
         {/* En-tête résultats + tag filtres actifs */}
         <div style={{
-          padding: "10px 16px 6px", flexShrink: 0,
+          padding: "14px 16px 8px", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           {!hotelLoading && hotels.length > 0 ? (
@@ -946,12 +914,17 @@ export default function SearchPageClient() {
                         ⚠ Limite
                       </div>
                     )}
-                    <HotelCard
-                      hotel={hotel}
-                      selected={selectedHotel === hotel.id}
-                      onSelect={(id) => { toggleHotel(id); setExpandedHotelId(id); }}
-                      estimatedArrival={useArrivalCheck ? getArrival(hotel) : null}
-                    />
+                    <div
+                      onMouseEnter={() => setHoveredHotel(hotel.id)}
+                      onMouseLeave={() => setHoveredHotel(null)}
+                    >
+                      <HotelCard
+                        hotel={hotel}
+                        selected={selectedHotel === hotel.id}
+                        onSelect={(id) => { toggleHotel(id); setExpandedHotelId(id); }}
+                        estimatedArrival={useArrivalCheck ? getArrival(hotel) : null}
+                      />
+                    </div>
                   </div>
                 );
               })}
@@ -994,6 +967,7 @@ export default function SearchPageClient() {
           origin={origin}
           destination={destination}
           selectedHotelId={selectedHotel}
+          hoveredHotelId={hoveredHotel}
           onSelectHotel={toggleHotel}
           onExpandHotel={(id) => { toggleHotel(id); setExpandedHotelId(id); }}
           stopPct={stopPct}

@@ -155,7 +155,7 @@ export default function HomePage() {
           <div>
             <p style={{ fontSize: "13px", color: "#6B7280", lineHeight: 1.7, marginBottom: "16px", maxWidth: "220px" }}>Tous les hôtels sur votre route, avec le prix et le détour.</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon-kipway.png" alt="KipWay" style={{ width: "200px", height: "200px", objectFit: "contain" }} />
+            <img src="/logo-kipway-v3.png" alt="KipWay" style={{ height: "56px", width: "auto" }} />
           </div>
           <div>
             <div style={{ fontSize: "11px", fontWeight: 700, color: "#9CA3AF", letterSpacing: "1px", textTransform: "uppercase", marginBottom: "14px" }}>Produit</div>

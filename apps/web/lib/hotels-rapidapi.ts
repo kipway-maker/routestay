@@ -118,6 +118,19 @@ async function fetchHotels(
 
     const name: string = (item.headingSection.heading ?? "Hôtel").trim();
 
+    // Debug temporaire — inspecte les champs de rating disponibles
+    if (listings.indexOf(item) === 0) {
+      console.log("[HotelsCom] rating fields on first item:", JSON.stringify({
+        reviews: item.reviews,
+        reviewInfo: item.reviewInfo,
+        reviewSummary: item.reviewSummary,
+        guestReviews: item.guestReviews,
+        star: item.star,
+        starRating: item.starRating,
+        hotelStarRating: item.hotelStarRating,
+      }, null, 2));
+    }
+
     // Prix : cherche DisplayPrice LEAD
     let price: number | null = null;
     try {
@@ -168,7 +181,28 @@ async function fetchHotels(
       city:                "",
       pricePerNight:       price,
       currency:            "EUR",
-      rating:              null,  // v3/list ne retourne pas de note guest
+      rating:              (() => {
+        try {
+          // Cherche la note guest (sur 10) dans plusieurs champs possibles de l'API v3
+          const raw =
+            item.reviews?.score ??
+            item.reviewInfo?.summary?.overallScoreWithDescriptionA11y?.value ??
+            item.guestReviews?.rating ??
+            item.reviewSummary?.overallScoreWithDescriptionA11y?.value ??
+            null;
+          if (raw != null) {
+            const n = parseFloat(String(raw).replace(/[^0-9.]/g, ""));
+            if (!isNaN(n) && n > 0) return Math.round((n > 5 ? n / 2 : n) * 10) / 10;
+          }
+          // Fallback : étoiles de l'hôtel (star rating sur 5)
+          const stars = item.star ?? item.starRating?.star ?? item.hotelStarRating ?? null;
+          if (stars != null) {
+            const n = parseFloat(String(stars));
+            if (!isNaN(n) && n > 0) return Math.round(Math.min(n, 5) * 10) / 10;
+          }
+          return null;
+        } catch { return null; }
+      })(),
       imageUrl,
       images:              photos.length >= 2 ? photos : [
         imageUrl,

@@ -25,7 +25,7 @@ function timeToMin(t: string): number {
 
 
 export default function HotelDetailOverlay({ hotel, estimatedArrival, departureDate, onClose }: Props) {
-  const photos = hotel.images?.length ? hotel.images : [hotel.imageUrl];
+  const photos = (hotel.images?.length ? hotel.images : [hotel.imageUrl]).slice(0, 10);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [photoHover, setPhotoHover] = useState(false);
   const [hoveredArrow, setHoveredArrow] = useState<"left" | "right" | null>(null);
@@ -109,15 +109,7 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
           onMouseEnter={() => setPhotoHover(true)}
           onMouseLeave={() => { setPhotoHover(false); setHoveredArrow(null); }}
         >
-          <img
-            key={photoIdx}
-            src={photos[photoIdx]}
-            alt={hotel.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.2s" }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
-          />
-
-          {/* Zones de navigation — 38% gauche et 38% droit, grande zone cliquable */}
+          {/* Zones de navigation — 38% gauche/droite */}
           {(["left", "right"] as const).map((side) => {
             const isLeft = side === "left";
             const isHov = hoveredArrow === side;
@@ -127,45 +119,39 @@ export default function HotelDetailOverlay({ hotel, estimatedArrival, departureD
                 key={side}
                 onMouseEnter={() => setHoveredArrow(side)}
                 onMouseLeave={() => setHoveredArrow(null)}
-                onClick={() => canNav && (isLeft
-                  ? setPhotoIdx((i) => i - 1)
-                  : setPhotoIdx((i) => i + 1))}
+                onClick={() => canNav && (isLeft ? setPhotoIdx((i) => i - 1) : setPhotoIdx((i) => i + 1))}
                 style={{
-                  position: "absolute",
-                  top: 0, bottom: 0,
-                  left: isLeft ? 0 : undefined,
-                  right: isLeft ? undefined : 0,
-                  width: "38%",
-                  cursor: canNav ? "pointer" : "default",
+                  position: "absolute", top: 0, bottom: 0, zIndex: 2,
+                  left: isLeft ? 0 : undefined, right: isLeft ? undefined : 0,
+                  width: "38%", cursor: canNav ? "pointer" : "default",
                   display: "flex", alignItems: "center",
                   justifyContent: isLeft ? "flex-start" : "flex-end",
-                  paddingLeft: isLeft ? "14px" : 0,
-                  paddingRight: isLeft ? 0 : "14px",
+                  paddingLeft: isLeft ? "14px" : 0, paddingRight: isLeft ? 0 : "14px",
                   background: isHov && canNav
-                    ? isLeft
-                      ? "linear-gradient(to right, rgba(0,0,0,0.22), transparent)"
-                      : "linear-gradient(to left, rgba(0,0,0,0.22), transparent)"
+                    ? isLeft ? "linear-gradient(to right, rgba(0,0,0,0.22), transparent)"
+                             : "linear-gradient(to left, rgba(0,0,0,0.22), transparent)"
                     : "transparent",
                   transition: "background 0.18s",
-                  zIndex: 2,
                 }}
               >
                 <span style={{
-                  fontSize: "32px",
-                  fontWeight: 300,
-                  color: "#fff",
+                  fontSize: "32px", fontWeight: 300, color: "#fff",
                   opacity: isHov && canNav ? 1 : 0,
                   transform: isHov ? "scale(1)" : "scale(0.8)",
                   transition: "opacity 0.18s, transform 0.18s",
-                  lineHeight: 1,
-                  textShadow: "0 2px 8px rgba(0,0,0,0.4)",
-                  userSelect: "none",
-                }}>
-                  {isLeft ? "‹" : "›"}
-                </span>
+                  lineHeight: 1, textShadow: "0 2px 8px rgba(0,0,0,0.4)", userSelect: "none",
+                }}>{isLeft ? "‹" : "›"}</span>
               </div>
             );
           })}
+          <img
+            key={photoIdx}
+            src={photos[photoIdx]}
+            alt={hotel.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.2s" }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop"; }}
+          />
+
 
           {/* Dots */}
           {photos.length > 1 && (
