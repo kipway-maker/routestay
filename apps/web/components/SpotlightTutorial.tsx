@@ -12,21 +12,21 @@ const STEPS = [
     emoji: "👆",
     title: "Placez votre étape sur la ligne",
     body: "Glissez le curseur ou cliquez sur la ligne du temps pour choisir l'heure de votre pause.",
-    side: "bottom" as const,
+    side: "bottom" as "top" | "bottom" | "left" | "right",
   },
   {
     selector: '[data-tutorial="map"]',
     emoji: "🗺️",
     title: "Ou cliquez sur la carte",
     body: "Cliquez n'importe où sur le trajet rouge — le pin se déplace et la recherche se relance.",
-    side: "left" as const,
+    side: "left" as "top" | "bottom" | "left" | "right",
   },
   {
     selector: '[data-tutorial="hotels"]',
     emoji: "🏨",
     title: "Les hôtels apparaissent ici",
     body: "Une fois votre étape posée, les meilleurs hôtels à proximité s'affichent dans cette liste.",
-    side: "right" as const,
+    side: "right" as "top" | "bottom" | "left" | "right",
   },
 ];
 

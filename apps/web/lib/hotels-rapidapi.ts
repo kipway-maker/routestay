@@ -147,11 +147,20 @@ async function fetchHotels(
       }
     } catch { /* ignore */ }
 
-    // Photos
-    const photos: string[] = (item.mediaSection?.gallery?.media ?? [])
-      .map((m: any) => m?.media?.url)
+    // Photos — plusieurs chemins possibles selon la version API
+    const mediaItems: any[] = item.mediaSection?.gallery?.media ?? [];
+    if (mediaItems.length === 0 && listings.indexOf(item) === 0) {
+      console.log("[HotelsCom] mediaSection on first item:", JSON.stringify(item.mediaSection, null, 2));
+    }
+    const photos: string[] = mediaItems
+      .map((m: any) =>
+        m?.media?.url ??          // chemin v3 standard
+        m?.url ??                 // chemin alternatif
+        m?.image?.url ??          // autre variante
+        null
+      )
       .filter(Boolean)
-      .slice(0, 6);
+      .slice(0, 10);
 
     const imageUrl = photos[0]
       ?? "https://images.unsplash.com/photo-1566073771259-470ec8958588?w=600&h=400&fit=crop";
